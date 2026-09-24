@@ -1,0 +1,60 @@
+name: 问题反馈
+description: 报告使用中遇到的问题
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢反馈！请尽量填写完整信息，方便定位问题。
+
+  - type: input
+    id: version
+    attributes:
+      label: 应用版本
+      placeholder: 例如 0.1.0
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: 操作系统
+      placeholder: 例如 Windows 11 23H2
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: 问题描述
+      description: 发生了什么？期望的行为是什么？
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤
+      placeholder: |
+        1. 打开应用
+        2. 点击「检查更新」
+        3. 日志面板显示 ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 日志面板内容
+      description: 可在执行页面点击「复制日志」后粘贴；请先移除用户名、私人路径等个人信息。
+      render: shell
+
+  - type: dropdown
+    id: status
+    attributes:
+      label: 状态检测显示
+      options:
+        - 可以直接打开
+        - 需要初始化
+        - 发现新版
+        - 需要修复

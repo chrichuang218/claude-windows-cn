@@ -1,0 +1,44 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+src-tauri/target
+.tauri-nsis-cache
+.claude
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Local development workflow (kept on this machine only)
+/.trellis/
+/.agents/
+/.codex/
+/AGENTS.md
+/docs/TRELLIS-ZH.md
+
+# Local build and acceptance artifacts
+/dist-*/
+/src-tauri/Microsoft/
+/docs/validation/
+/docs/design/
+/docs/ui-baseline/
+/docs/acceptance-report-*.md
+/docs/validation-results.md
+/docs/real-system-validation-plan.md

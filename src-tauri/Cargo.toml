@@ -1,0 +1,24 @@
+[package]
+name = "claude-windows-cn"
+version = "0.1.0"
+description = "管理 Windows 上的 Claude Desktop 并提供可选汉化。"
+authors = ["Claude Desktop Zh contributors"]
+license = "MIT"
+edition = "2021"
+
+[lib]
+name = "claude_windows_cn_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+reqwest = { version = "0.13", default-features = false, features = ["blocking", "native-tls", "system-proxy"] }
+tauri = { version = "2", features = [] }
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Security", "Win32_System_Threading"] }
