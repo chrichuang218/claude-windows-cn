@@ -25,6 +25,39 @@
 
 <img src="docs/images/localization.png" alt="Claude 中文助手汉化页：选择 Cowork 兼容或完整汉化，应用补丁或恢复原样" width="736" />
 
+### Claude Desktop · 汉化效果
+
+具体汉化覆盖随 Claude 版本和所选模式变化。
+
+**Cowork 首页与语言菜单**
+
+<img src="docs/images/desktop-cowork.png" alt="Claude Desktop 汉化效果：Cowork 首页与语言选择菜单" width="736" />
+
+**项目页面**
+
+<img src="docs/images/desktop-projects.png" alt="Claude Desktop 汉化效果：项目页面" width="736" />
+
+<details>
+<summary>更多 Desktop 汉化效果</summary>
+
+**计费设置**
+
+<img src="docs/images/desktop-billing.png" alt="Claude Desktop 汉化效果：计费设置页面" width="736" />
+
+**计划任务**
+
+<img src="docs/images/desktop-scheduled-tasks.png" alt="Claude Desktop 汉化效果：计划任务页面" width="736" />
+
+**Code 界面**
+
+<img src="docs/images/desktop-code.png" alt="Claude Desktop 汉化效果：Code 界面" width="736" />
+
+**自定义设置**
+
+<img src="docs/images/desktop-customize.png" alt="Claude Desktop 汉化效果：自定义设置页面" width="736" />
+
+</details>
+
 ## 能做什么
 
 - **管理官方应用**：检测已有 Claude Desktop，提供官方安装、更新与启动入口，下载包进行签名校验。
