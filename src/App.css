@@ -114,7 +114,7 @@
     #claude-assistant-sketch .ca-heading-subtitle { margin-top:6px; font-size:13px; color:var(--ca-muted); }
     #claude-assistant-sketch .ca-heading { flex-shrink:0; }
     #claude-assistant-sketch .ca-pane { display:flex; flex-direction:column; flex:1 0 auto; }
-    #claude-assistant-sketch .ca-overview > .ca-row { flex:1; min-height:110px; }
+    #claude-assistant-sketch .ca-overview > .ca-row { flex:0 0 auto; min-height:110px; }
     #claude-assistant-sketch .ca-localize > .ca-mode { min-height:110px; padding:26px 22px; margin:0; flex-shrink:0; }
     #claude-assistant-sketch .ca-localize > .ca-mode + .ca-mode { margin-top:16px; }
     #claude-assistant-sketch .ca-localize .ca-mode b { font-size:14px; }
@@ -159,24 +159,25 @@
     /* Keep exit presentation in CSS; display becomes none after the fade. */
     #claude-assistant-sketch .ca-settings-overlay { --ca-settings-ease:cubic-bezier(0.23,1,0.32,1); display:none; justify-content:center; align-items:center; padding:16px; opacity:0; transition:opacity 120ms var(--ca-settings-ease), display 120ms allow-discrete; }
     #claude-assistant-sketch .ca-settings-overlay[data-open="true"] { display:flex; opacity:1; transition-duration:200ms; }
-    #claude-assistant-sketch .ca-settings { width:480px; max-width:100%; max-height:100%; overflow:auto; padding:24px; background:var(--ca-bg); border:1px solid var(--ca-line); border-radius:12px; box-shadow:0 18px 60px #211d1826; }
+    #claude-assistant-sketch .ca-settings { width:480px; max-width:100%; max-height:100%; display:flex; flex-direction:column; overflow:hidden; background:var(--ca-bg); border:1px solid var(--ca-line); border-radius:12px; box-shadow:0 18px 60px #211d1826; }
+    #claude-assistant-sketch .ca-settings-body { min-height:0; overflow:auto; padding:12px 20px 16px; }
     @starting-style {
       #claude-assistant-sketch .ca-settings-overlay[data-open="true"] { opacity:0; }
     }
-    #claude-assistant-sketch .ca-settings-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:18px; }
+    #claude-assistant-sketch .ca-settings-head { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-shrink:0; padding:12px 20px; border-bottom:1px solid var(--ca-line); }
     #claude-assistant-sketch .ca-settings-head h2 { font-size:21px; }
     #claude-assistant-sketch .ca-settings-group { font-size:12px; font-weight:500; color:var(--ca-muted); margin-bottom:2px; }
-    #claude-assistant-sketch .ca-settings-row { display:flex; align-items:center; justify-content:space-between; gap:20px; padding:12px 0; }
+    #claude-assistant-sketch .ca-settings-row { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:8px 0; }
     #claude-assistant-sketch .ca-settings-row > div { min-width:0; }
     #claude-assistant-sketch .ca-settings-row p { font-size:12px; line-height:1.65; color:var(--ca-muted); margin-top:4px; overflow-wrap:anywhere; }
     #claude-assistant-sketch .ca-settings .ca-button { flex-shrink:0; font-size:13px; min-height:34px; padding:6px 12px; }
-    #claude-assistant-sketch .ca-settings-section { border-top:1px solid var(--ca-line); margin-top:10px; padding-top:16px; }
+    #claude-assistant-sketch .ca-settings-section { border-top:1px solid var(--ca-line); margin-top:8px; padding-top:12px; }
     #claude-assistant-sketch .ca-settings-version { font-size:12px; font-weight:400; color:var(--ca-muted); margin-left:8px; }
     #claude-assistant-sketch .ca-switch { appearance:none; width:34px; height:20px; margin:0; padding:2px; border:1px solid var(--ca-muted); border-radius:12px; background:var(--ca-muted); flex-shrink:0; }
     #claude-assistant-sketch .ca-switch::after { content:""; display:block; width:14px; height:14px; border-radius:50%; background:var(--ca-surface); }
     #claude-assistant-sketch .ca-switch:checked { background:var(--ca-accent); border-color:var(--ca-accent); }
     #claude-assistant-sketch .ca-switch:checked::after { transform:translateX(14px); }
-    #claude-assistant-sketch .ca-settings-footer { border-top:1px solid var(--ca-line); margin-top:12px; padding-top:16px; }
+    #claude-assistant-sketch .ca-settings-footer { border-top:1px solid var(--ca-line); margin-top:8px; padding-top:12px; }
     #claude-assistant-sketch .ca-settings-footer-row { display:flex; justify-content:space-between; align-items:center; gap:16px; }
     #claude-assistant-sketch .ca-settings-footer-row p { font-size:12px; color:var(--ca-muted); }
     #claude-assistant-sketch .ca-settings-message { padding:9px 0; color:var(--ca-good); font-size:12px; overflow-wrap:anywhere; }

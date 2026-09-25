@@ -8,6 +8,77 @@ mod util;
 use assistant::{AssistantConfig, AssistantStatus};
 use claude::ClaudeStatus;
 use operation::{OperationSnapshot, OperationState};
+use tauri::Manager;
+
+fn initial_window_size(
+    design: tauri::LogicalSize<f64>,
+    web_scale: f64,
+    available: tauri::PhysicalSize<u32>,
+) -> Result<tauri::PhysicalSize<u32>, String> {
+    if !web_scale.is_finite() || web_scale <= 0.0 {
+        return Err("界面缩放比例无效。".into());
+    }
+    Ok(tauri::PhysicalSize::new(
+        (design.width * web_scale)
+            .round()
+            .min(available.width as f64) as u32,
+        (design.height * web_scale)
+            .round()
+            .min(available.height as f64) as u32,
+    ))
+}
+
+#[tauri::command]
+fn fit_initial_window(window: tauri::WebviewWindow, web_scale: f64) -> Result<(), String> {
+    let monitor = window
+        .current_monitor()
+        .map_err(|e| e.to_string())?
+        .ok_or("无法读取窗口所在屏幕。")?;
+    let config = window
+        .app_handle()
+        .config()
+        .app
+        .windows
+        .iter()
+        .find(|config| config.label == window.label())
+        .ok_or("未找到窗口尺寸配置。")?;
+    let inner = window.inner_size().map_err(|e| e.to_string())?;
+    let outer = window.outer_size().map_err(|e| e.to_string())?;
+    let frame = tauri::PhysicalSize::new(
+        outer.width.saturating_sub(inner.width),
+        outer.height.saturating_sub(inner.height),
+    );
+    let work = monitor.work_area();
+    let available = tauri::PhysicalSize::new(
+        work.size.width.saturating_sub(frame.width),
+        work.size.height.saturating_sub(frame.height),
+    );
+    // WebView's ratio already includes display DPI and Windows text scaling.
+    // Physical units avoid applying the monitor's DPI a second time.
+    let size = initial_window_size(
+        tauri::LogicalSize::new(config.width, config.height),
+        web_scale,
+        available,
+    )?;
+    let minimum = initial_window_size(
+        tauri::LogicalSize::new(
+            config.min_width.unwrap_or(0.0),
+            config.min_height.unwrap_or(0.0),
+        ),
+        monitor.scale_factor(),
+        available,
+    )?;
+    window
+        .set_min_size(Some(minimum))
+        .map_err(|e| e.to_string())?;
+    window.set_size(size).map_err(|e| e.to_string())?;
+    window
+        .set_position(tauri::PhysicalPosition::new(
+            work.position.x + (available.width.saturating_sub(size.width) / 2) as i32,
+            work.position.y + (available.height.saturating_sub(size.height) / 2) as i32,
+        ))
+        .map_err(|e| e.to_string())
+}
 
 #[tauri::command]
 fn get_status() -> Result<ClaudeStatus, String> {
@@ -76,6 +147,7 @@ pub fn run() {
     tauri::Builder::default()
         .manage(OperationState::new())
         .invoke_handler(tauri::generate_handler![
+            fit_initial_window,
             get_status,
             get_assistant_status,
             get_config,
@@ -87,4 +159,32 @@ pub fn run() {
         ])
         .run(context)
         .expect("failed to run app");
+}
+
+#[cfg(test)]
+mod window_tests {
+    use super::*;
+
+    #[test]
+    fn initial_size_preserves_css_space_until_the_work_area_is_full() {
+        let design = tauri::LogicalSize::new(800.0, 740.0);
+        for (scale, work, expected) in [
+            (1.0, (1920, 1040), (800, 740)),
+            (1.22, (1920, 1040), (976, 903)),
+            (1.5, (2560, 1400), (1200, 1110)),
+            (1.83, (2560, 1400), (1464, 1354)),
+            (2.0, (1280, 680), (1280, 680)),
+            (1.22, (1366, 720), (976, 720)),
+        ] {
+            let actual =
+                initial_window_size(design, scale, tauri::PhysicalSize::new(work.0, work.1))
+                    .unwrap();
+            assert_eq!((actual.width, actual.height), expected);
+        }
+        for invalid in [0.0, -1.0, f64::NAN, f64::INFINITY] {
+            assert!(
+                initial_window_size(design, invalid, tauri::PhysicalSize::new(1920, 1040)).is_err()
+            );
+        }
+    }
 }

@@ -282,10 +282,12 @@ function App() {
     const start = async () => {
       if (runningInTauri) {
         try {
+          await invoke('fit_initial_window', { webScale: window.devicePixelRatio })
           await getCurrentWindow().show()
         } catch (error) {
-          console.error('无法显示助手窗口', error)
-          if (!cancelled) setLoadError(`无法显示助手窗口：${errorText(error)}`)
+          console.error('无法初始化助手窗口', error)
+          if (!cancelled) setLoadError(`无法初始化助手窗口：${errorText(error)}`)
+          await getCurrentWindow().show().catch((showError) => console.error('无法显示助手窗口', showError))
           return
         }
       }
@@ -542,6 +544,7 @@ function App() {
 
         <div className="ca-overlay ca-settings-overlay" data-open={settingsOpen} aria-hidden={!settingsOpen}><section ref={settingsRef} tabIndex={-1} inert={!settingsOpen || confirm !== null || errorOpen} className="ca-settings" role="dialog" aria-modal="true" aria-labelledby="ca-settings-title">
           <div className="ca-settings-head"><h2 id="ca-settings-title">设置</h2><button type="button" className="ca-icon-button" aria-label="关闭设置" onClick={closeSettings}><X aria-hidden="true" /></button></div>
+          <div className="ca-settings-body">
           <h3 className="ca-settings-group">常规</h3>
           <label className="ca-settings-row"><div><h3>自动检查更新</h3><p>助手运行时，每天检查 Claude 和助手更新。</p></div><input className="ca-switch" type="checkbox" role="switch" checked={config.dailyUpdateCheck} aria-label="每天自动检查更新" onChange={(event) => void changeDailyCheck(event.target.checked)} /></label>
           <div className="ca-settings-row"><div><h3>桌面快捷方式</h3><p>创建 Claude Desktop 桌面入口。</p></div><button type="button" className="ca-button" disabled={!claude?.installed} onClick={() => void startOperation('create_claude_shortcut')}>创建或修复</button></div>
@@ -552,6 +555,7 @@ function App() {
             {settingsNotice && !settingsNotice.includes('卸载脚本已启动') ? <p className="ca-settings-message" role="status">{settingsNotice}</p> : null}
           </section>
           <div className="ca-settings-footer"><div className="ca-settings-footer-row"><p>卸载后保留 Claude 和个人数据</p><button type="button" className="ca-text-button ca-danger" onClick={() => confirmAction('卸载助手？', '仅移除助手及其创建的入口。Claude Desktop 与个人数据将保留。', 'uninstall_assistant')}>卸载助手</button></div>{assistant?.uninstallResult ? <p className="ca-settings-message" data-error={assistant.uninstallResultOk === false} role={assistant.uninstallResultOk === false ? 'alert' : 'status'}>{assistant.uninstallResult}</p> : null}{settingsNotice.includes('卸载脚本已启动') ? <p className="ca-settings-message" role="status">{settingsNotice}</p> : null}</div>
+          </div>
         </section></div>
 
         {confirm ? <div className="ca-overlay"><section ref={confirmRef} tabIndex={-1} inert={errorOpen} className="ca-confirm" role="dialog" aria-modal="true" aria-labelledby="ca-confirm-title"><h2 id="ca-confirm-title">{confirm.title}</h2><p>{confirm.text}</p><div className="ca-actions"><button type="button" className="ca-button" onClick={closeConfirm}>取消</button><button type="button" className="ca-button ca-primary" onClick={confirm.action}>{confirm.accept}</button></div></section></div> : null}
