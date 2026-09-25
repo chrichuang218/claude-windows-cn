@@ -70,6 +70,9 @@ pub fn run() {
     }
 
     self_update::start_daily_scheduler();
+    let mut context = tauri::generate_context!();
+    // Tauri decodes only the first ICO frame (16px); do not upscale it for the taskbar.
+    context.set_default_window_icon(Some(tauri::include_image!("icons/128x128@2x.png")));
     tauri::Builder::default()
         .manage(OperationState::new())
         .invoke_handler(tauri::generate_handler![
@@ -82,6 +85,6 @@ pub fn run() {
             open_claude,
             choose_assistant_install_path,
         ])
-        .run(tauri::generate_context!())
+        .run(context)
         .expect("failed to run app");
 }

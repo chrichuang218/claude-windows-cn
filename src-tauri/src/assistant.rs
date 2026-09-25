@@ -74,10 +74,7 @@ struct InstallManifest {
 
 fn defaults() -> Result<DefaultPaths, String> {
     let exe = env::current_exe().map_err(|error| error.to_string())?;
-    let portable = exe
-        .parent()
-        .ok_or("无法确定助手所在目录。")?
-        .join("ClaudeWindowsCN");
+    let portable = exe.parent().ok_or("无法确定助手所在目录。")?.to_path_buf();
     let user = util::local_app_data()?
         .join("Programs")
         .join("ClaudeWindowsCN");
@@ -298,7 +295,11 @@ pub fn install(
     }
     let source = env::current_exe().map_err(|error| error.to_string())?;
     let target = destination.join(util::EXE_NAME);
-    if target.exists() && read_manifest(&destination)?.is_none() {
+    let in_place = target.is_file()
+        && fs::canonicalize(&target).map_err(|error| error.to_string())?
+            == fs::canonicalize(&source).map_err(|error| error.to_string())?;
+    let existing_manifest = read_manifest(&destination)?;
+    if target.exists() && !in_place && existing_manifest.is_none() {
         return Err("目标目录已有同名程序，但没有本助手的安装记录；请换一个目录。".into());
     }
     let manifest = InstallManifest {
@@ -350,7 +351,7 @@ if ({registered}) {{
     }}
 }}
 New-Item -ItemType Directory -Path $dest -Force | Out-Null
-if ($source -ne $target) {{ Copy-Item -LiteralPath $source -Destination $target -Force }}
+if ({copy}) {{ Copy-Item -LiteralPath $source -Destination $target -Force }}
 Copy-Item -LiteralPath $manifest -Destination (Join-Path $dest 'install.json') -Force
 if ({shortcut}) {{
     $s=$shell.CreateShortcut($link); $s.TargetPath=$target; $s.WorkingDirectory=$dest; $s.Description='Claude Windows 中文助手'; $s.Save()
@@ -368,6 +369,7 @@ if (-not (Test-Path -LiteralPath $target)) {{ throw '助手程序复制失败。
         dest = ps_path(&destination),
         source = ps_path(&source),
         target = ps_path(&target),
+        copy = if in_place { "$false" } else { "$true" },
         manifest = ps_path(&manifest_stage),
         desktop = ps_path(&desktop),
         shortcut = if config.create_assistant_shortcut {
@@ -408,10 +410,16 @@ if (-not (Test-Path -LiteralPath $target)) {{ throw '助手程序复制失败。
         return Err("助手安装文件摘要与当前程序不一致。".into());
     }
     save_installed_record(&manifest)?;
-    Ok(OperationOutcome::done(format!(
-        "助手已安装到 {}。",
-        destination.display()
-    )))
+    let message = if in_place {
+        format!("助手已在 {} 就绪，未复制程序。", destination.display())
+    } else {
+        format!(
+            "助手已安装到 {}。原始文件 {} 已保留；今后请使用安装目录中的程序或快捷方式，退出后可删除原始文件。",
+            destination.display(), source.display()
+        )
+    };
+    operation.log(&message);
+    Ok(OperationOutcome::done(message))
 }
 
 pub fn uninstall(operation: &OperationState) -> Result<OperationOutcome, String> {
@@ -552,6 +560,80 @@ mod tests {
     use super::*;
     #[cfg(windows)]
     use std::{process::Command, time::SystemTime};
+
+    #[cfg(windows)]
+    #[test]
+    fn portable_in_place_does_not_copy_executable() {
+        const CHILD: &str = "CLAUDE_WINDOWS_CN_PORTABLE_TEST_CHILD";
+        if env::var_os(CHILD).is_some() {
+            let source = env::current_exe().unwrap();
+            let destination = source.parent().unwrap();
+            assert_eq!(Path::new(&defaults().unwrap().portable), destination);
+            let original_hash = util::sha256(&source).unwrap();
+            let config = AssistantConfig {
+                assistant_install_mode: "portable".into(),
+                assistant_path: destination.display().to_string(),
+                create_assistant_shortcut: false,
+                daily_update_check: false,
+            };
+            save_config(config.clone()).unwrap();
+            let operation = OperationState::new();
+            install(config.clone(), &operation).unwrap();
+            install(config, &operation).unwrap();
+            assert_eq!(util::sha256(&source).unwrap(), original_hash);
+            assert_eq!(
+                read_manifest(destination).unwrap().unwrap().mode,
+                "portable"
+            );
+            assert_eq!(
+                status().unwrap().install_path,
+                destination.display().to_string()
+            );
+            let entries = fs::read_dir(destination)
+                .unwrap()
+                .collect::<Result<Vec<_>, _>>()
+                .unwrap();
+            assert_eq!(
+                entries.len(),
+                2,
+                "Only the original EXE and install.json should exist"
+            );
+            return;
+        }
+        let scratch = env::temp_dir().join(format!(
+            "claude-in-place-test-{}-{}",
+            std::process::id(),
+            SystemTime::now()
+                .duration_since(SystemTime::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let portable = scratch.join("Portable");
+        fs::create_dir_all(&portable).unwrap();
+        let child_exe = portable.join(util::EXE_NAME);
+        fs::copy(env::current_exe().unwrap(), &child_exe).unwrap();
+        let output = Command::new(&child_exe)
+            .args([
+                "--exact",
+                "assistant::tests::portable_in_place_does_not_copy_executable",
+                "--nocapture",
+            ])
+            .env(CHILD, "1")
+            .env("LOCALAPPDATA", scratch.join("Data"))
+            .env("CLAUDE_WINDOWS_CN_TEST_DESKTOP", scratch.join("Desktop"))
+            .output()
+            .unwrap();
+        assert!(
+            output.status.success(),
+            "{}\n{}",
+            String::from_utf8_lossy(&output.stdout),
+            String::from_utf8_lossy(&output.stderr)
+        );
+        let resolved = fs::canonicalize(&scratch).unwrap();
+        let temporary_root = fs::canonicalize(env::temp_dir()).unwrap();
+        assert!(resolved.starts_with(&temporary_root) && resolved != temporary_root);
+        fs::remove_dir_all(resolved).unwrap();
+    }
 
     #[test]
     fn rejects_drive_root_and_relative_paths() {
