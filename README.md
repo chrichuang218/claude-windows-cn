@@ -16,9 +16,9 @@
 
 > 本项目是第三方工具，与 Anthropic 没有从属关系。助手和 Claude Desktop 是两个独立应用，分别安装、更新和卸载。
 
-> 仓库已更名为 `claude-desktop-cn`，新版仅使用新仓库更新源。旧包请直接替换为包含本次改动的新构建；已发布的 v0.1.2 尚不包含此改动。
+> 仓库已更名为 `claude-desktop-cn`，v0.2.0 起仅使用新仓库更新源。0.1.x 用户请退出旧助手，用 v0.2.0 的 EXE 手动替换安装目录中的同名文件；原安装路径和配置继续保留。
 
-> macOS 已加入与 Windows 对齐的功能实现及双架构构建流程，尚未经过 Mac 实机验收，也尚未发布经过验收的 macOS 安装包。当前截图来自 Windows；构建成功不等于 Claude 启动、汉化恢复和 Cowork 已验证。验收范围见 [macOS 验收清单](docs/macos-acceptance.md)。
+> v0.2.0 提供 Windows 正式版和 **macOS 预览版**。Mac 双架构已通过原生 CI、自动测试和包内自检，功能实现与 Windows 对齐；真实 Claude 的安装、汉化恢复、权限和 Cowork 尚未完成交互验收。当前截图来自 Windows，具体范围见 [macOS 验收清单](docs/macos-acceptance.md)。
 
 ## 界面预览
 
@@ -83,24 +83,24 @@
 
 ## 快速上手
 
-1. Windows 前往 [Releases](https://github.com/chrichuang218/claude-desktop-cn/releases/latest)，下载 `claude-windows-cn.exe`。macOS 在完成验收和正式发布前，请按下方步骤从源码构建；CI 也会生成供测试的应用包。各平台产物名称见下表，均配套 `.sha256` 摘要。
+1. 前往 [v0.2.0 Release](https://github.com/chrichuang218/claude-desktop-cn/releases/tag/v0.2.0)，按下表下载适合系统和芯片架构的包。macOS 附件为预览版；各包均配套同名 `.sha256` 摘要。
 2. 启动助手，选择安装方式和位置。一般选 **用户安装**；**便携方式**默认在当前 EXE 或 `.app` 所在目录使用，不再复制程序。选择其他位置或用户/系统安装时，会保留原始下载文件；安装完成并退出后可删除原始文件，今后使用安装目录中的程序或快捷方式。macOS 用户安装默认为 `~/Applications`，系统安装默认为 `/Applications`，安装目录内的应用名称为 `Claude 中文助手.app`。
 3. 在 **概览** 查看 Claude Desktop 状态。已安装则直接使用；未安装可通过助手下载安装。
 4. 进入 **汉化**，选择模式并确认应用。需要恢复时，点击 **恢复原样**。
 
 更新、汉化和恢复可能关闭 Claude Desktop，请先保存正在进行的工作；出现系统权限提示时，按实际操作确认。
 
-| 平台 | 产物名称 | 运行环境 |
+| 平台 | 下载 | 状态与运行环境 |
 | --- | --- | --- |
-| Windows x64 | `claude-windows-cn.exe` | Windows、WebView2 Runtime |
-| macOS Apple Silicon | `claude-cn-macos-arm64.app.tar.gz` | macOS 13 或更新版本 |
-| macOS Intel | `claude-cn-macos-x64.app.tar.gz` | macOS 13 或更新版本 |
+| Windows x64 | [claude-windows-cn.exe](https://github.com/chrichuang218/claude-desktop-cn/releases/download/v0.2.0/claude-windows-cn.exe) | 正式版；Windows、WebView2 Runtime |
+| macOS Apple Silicon | [claude-cn-macos-arm64.app.tar.gz](https://github.com/chrichuang218/claude-desktop-cn/releases/download/v0.2.0/claude-cn-macos-arm64.app.tar.gz) | 预览版；macOS 13+ |
+| macOS Intel | [claude-cn-macos-x64.app.tar.gz](https://github.com/chrichuang218/claude-desktop-cn/releases/download/v0.2.0/claude-cn-macos-x64.app.tar.gz) | 预览版；macOS 13+ |
 
-macOS 解压后运行 `Claude 中文助手.app`。CI 产物使用本地签名，尚无 Apple Developer ID 签名与公证；Gatekeeper 可能要求用户在系统设置中批准打开，正式分发前须完成对应验收。Windows 暂不提供 ARM64 版；Cowork 的硬件与系统要求以官方为准。下载安装、更新检查、汉化与恢复需要联网。
+macOS 解压后运行 `Claude 中文助手.app`。预览包使用 ad-hoc 本地签名，没有 Apple Developer ID 签名与公证；Gatekeeper 可能阻止首次打开或要求用户在系统设置中批准。Windows 暂不提供 ARM64 版；Cowork 的硬件与系统要求以官方为准。下载安装、更新检查、汉化与恢复需要联网。
 
 macOS 的汉化和恢复还需要 **Python 3.9 或更新版本**，可通过 [python.org](https://www.python.org/downloads/macos/) 或 Homebrew 安装。助手会检查依赖，缺少时明确提示，不会自动安装 Python；Claude 的安装、更新与启动不需要 Python。
 
-首版的验证范围与已知限制见 [更新日志](CHANGELOG.md#010---2026-09-24)。
+当前版本的验证范围与已知限制见 [更新日志](CHANGELOG.md#020---2026-09-26)。
 
 ## 常见问题
 
