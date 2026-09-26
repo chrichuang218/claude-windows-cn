@@ -107,6 +107,65 @@ mod repository_tests {
     use super::*;
 
     #[test]
+    fn no_release_is_a_normal_check_result_but_other_failures_remain_errors() {
+        let missing = r#"{"status":404,"content":""}"#;
+        assert!(parse_release_response(missing, true).unwrap().is_none());
+        // A tag that disappeared after the redirect is not proof of no releases.
+        assert!(parse_release_response(missing, false).is_err());
+        for status in [403, 429, 500] {
+            let json = format!(r#"{{"status":{status},"content":""}}"#);
+            assert!(parse_release_response(&json, true).is_err());
+        }
+        assert!(parse_release_response(r#"{"status":200,"content":"null"}"#, true).is_err());
+        assert!(parse_release_response("invalid response", true).is_err());
+        let cached = assistant_check_cache(&Ok(None));
+        assert_eq!(cached.update_available, Some(false));
+        assert_eq!(cached.latest_version, None);
+        assert_eq!(cached.error, None);
+        let outcome = assistant_check_outcome(None, &OperationState::new()).unwrap();
+        assert_eq!(outcome.update_available, Some(false));
+        assert_eq!(outcome.latest_version, None);
+        assert_eq!(outcome.message, "暂无可用的助手更新。");
+        let failed = assistant_check_cache(&Err("network unavailable".into()));
+        assert_eq!(failed.update_available, None);
+        assert_eq!(failed.latest_version, None);
+        assert_eq!(failed.error.as_deref(), Some("network unavailable"));
+    }
+
+    #[test]
+    fn claude_check_cache_preserves_success_and_clears_stale_results_on_error() {
+        for available in [true, false] {
+            let cached = claude_check_cache(&Ok((available, "2.7032.0".into())));
+            let restored: CachedUpdate =
+                serde_json::from_slice(&serde_json::to_vec(&cached).unwrap()).unwrap();
+            assert_eq!(restored.update_available, Some(available));
+            assert_eq!(restored.latest_version.as_deref(), Some("2.7032.0"));
+            assert!(restored.error.is_none());
+            assert!(!restored.checked_at.is_empty());
+        }
+        let failed = claude_check_cache(&Err("network unavailable".into()));
+        assert_eq!(failed.update_available, None);
+        assert_eq!(failed.latest_version, None);
+        assert_eq!(failed.error.as_deref(), Some("network unavailable"));
+    }
+
+    pub(super) fn fake_release(names: &[&str]) -> Release {
+        Release {
+            tag_name: "v9.9.9".into(),
+            html_url: format!("https://github.com/{OWNER_REPO}/releases/tag/v9.9.9"),
+            assets: names
+                .iter()
+                .map(|name| Asset {
+                    name: (*name).into(),
+                    browser_download_url: format!(
+                        "https://github.com/{OWNER_REPO}/releases/download/v9.9.9/{name}"
+                    ),
+                })
+                .collect(),
+        }
+    }
+
+    #[test]
     fn release_urls_require_the_current_repository() {
         for (base, accepted) in [
             (format!("https://github.com/{OWNER_REPO}"), true),

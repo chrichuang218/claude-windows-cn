@@ -1,7 +1,7 @@
-use sha2::{Digest, Sha256};
+include!("util_shared.rs");
+
 use std::{
     env, fs,
-    io::Read,
     path::{Path, PathBuf},
     process::{Command, Stdio},
     thread,
@@ -34,24 +34,27 @@ pub fn ps_path(path: &Path) -> String {
     ps_quote(path.to_string_lossy())
 }
 
-pub fn powershell(script: &str) -> Result<String, String> {
+fn powershell_command() -> Command {
     let mut command = Command::new("powershell.exe");
     // PowerShell 7's module paths can make Windows PowerShell load incompatible
     // built-in modules. Let Windows PowerShell rebuild its own default paths.
     command.env_remove("PSModulePath");
     hide_window(&mut command);
+    command.args([
+        "-NoProfile",
+        "-NonInteractive",
+        "-ExecutionPolicy",
+        "Bypass",
+    ]);
+    command
+}
+
+pub fn powershell(script: &str) -> Result<String, String> {
     let script = format!(
         "$ErrorActionPreference='Stop'; [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding $false; {script}"
     );
-    let output = command
-        .args([
-            "-NoProfile",
-            "-NonInteractive",
-            "-ExecutionPolicy",
-            "Bypass",
-            "-Command",
-            &script,
-        ])
+    let output = powershell_command()
+        .args(["-Command", &script])
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .output()
@@ -102,24 +105,6 @@ pub fn download(url: &str, destination: &Path) -> Result<(), String> {
     powershell(&script).map(|_| ())
 }
 
-pub fn sha256(path: &Path) -> Result<String, String> {
-    let file =
-        fs::File::open(path).map_err(|error| format!("读取 {} 失败：{error}", path.display()))?;
-    let mut reader = std::io::BufReader::new(file);
-    let mut hasher = Sha256::new();
-    let mut buffer = [0u8; 65536];
-    loop {
-        let count = reader
-            .read(&mut buffer)
-            .map_err(|error| error.to_string())?;
-        if count == 0 {
-            break;
-        }
-        hasher.update(&buffer[..count]);
-    }
-    Ok(format!("{:x}", hasher.finalize()))
-}
-
 pub fn hide_window(command: &mut Command) {
     #[cfg(windows)]
     command.creation_flags(0x08000000);
@@ -131,35 +116,21 @@ pub fn write_script(path: &Path, content: &str) -> Result<(), String> {
     fs::write(path, bytes).map_err(|error| format!("写入 {} 失败：{error}", path.display()))
 }
 
-pub fn replace_file(stage: &Path, target: &Path) -> Result<(), String> {
-    if !target.exists() {
-        return fs::rename(stage, target).map_err(|error| error.to_string());
-    }
-    let previous = target.with_extension("previous");
-    if previous.exists() {
-        fs::remove_file(&previous).map_err(|error| error.to_string())?;
-    }
-    fs::rename(target, &previous).map_err(|error| error.to_string())?;
-    if let Err(error) = fs::rename(stage, target) {
-        let _ = fs::rename(&previous, target);
-        return Err(format!("替换 {} 失败：{error}", target.display()));
-    }
-    let _ = fs::remove_file(previous);
-    Ok(())
+pub fn write_json(path: &Path, value: &impl serde::Serialize) -> Result<(), String> {
+    fs::create_dir_all(path.parent().ok_or("记录目录无效。")?)
+        .map_err(|error| error.to_string())?;
+    let stage = path.with_extension("json.tmp");
+    fs::write(
+        &stage,
+        serde_json::to_vec_pretty(value).map_err(|error| error.to_string())?,
+    )
+    .map_err(|error| format!("写入 {} 失败：{error}", path.display()))?;
+    replace_file(&stage, path)
 }
 
 pub fn run_script(script: &Path) -> Result<String, String> {
-    let mut command = Command::new("powershell.exe");
-    command.env_remove("PSModulePath");
-    hide_window(&mut command);
-    let output = command
-        .args([
-            "-NoProfile",
-            "-NonInteractive",
-            "-ExecutionPolicy",
-            "Bypass",
-            "-File",
-        ])
+    let output = powershell_command()
+        .arg("-File")
         .arg(script)
         .output()
         .map_err(|error| format!("启动脚本失败：{error}"))?;
@@ -261,17 +232,8 @@ pub fn run_helper_if_requested() -> bool {
 fn run_script_to_log(script: &Path, log_path: &Path) -> Result<String, String> {
     let file = fs::File::create(log_path).map_err(|error| error.to_string())?;
     let stderr = file.try_clone().map_err(|error| error.to_string())?;
-    let mut command = Command::new("powershell.exe");
-    command.env_remove("PSModulePath");
-    hide_window(&mut command);
-    let status = command
-        .args([
-            "-NoProfile",
-            "-NonInteractive",
-            "-ExecutionPolicy",
-            "Bypass",
-            "-File",
-        ])
+    let status = powershell_command()
+        .arg("-File")
         .arg(script)
         .stdout(Stdio::from(file))
         .stderr(Stdio::from(stderr))

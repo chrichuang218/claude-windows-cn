@@ -1,7 +1,7 @@
-use sha2::{Digest, Sha256};
+include!("../util_shared.rs");
+
 use std::{
     env, fs,
-    io::Read,
     path::{Path, PathBuf},
     process::Command,
     time::Duration,
@@ -70,23 +70,43 @@ pub fn download(url: &str, destination: &Path) -> Result<(), String> {
     result
 }
 
-pub fn sha256(path: &Path) -> Result<String, String> {
-    let mut reader = std::io::BufReader::new(
-        fs::File::open(path).map_err(|e| format!("读取 {} 失败：{e}", path.display()))?,
-    );
-    let mut hasher = Sha256::new();
-    let mut buffer = [0u8; 65536];
-    loop {
-        let count = reader.read(&mut buffer).map_err(|e| e.to_string())?;
-        if count == 0 {
-            break;
-        }
-        hasher.update(&buffer[..count]);
-    }
-    Ok(format!("{:x}", hasher.finalize()))
+pub(crate) fn shell_quote(value: impl AsRef<std::ffi::OsStr>) -> String {
+    format!(
+        "'{}'",
+        value.as_ref().to_string_lossy().replace('\'', "'\\''")
+    )
 }
 
-pub fn replace_file(stage: &Path, target: &Path) -> Result<(), String> {
-    // POSIX rename atomically replaces a file in the same filesystem.
-    fs::rename(stage, target).map_err(|error| format!("替换 {} 失败：{error}", target.display()))
+pub(crate) fn run_shell(script: &str, elevated: bool) -> Result<String, String> {
+    let mut command = if elevated {
+        let mut command = Command::new("/usr/bin/osascript");
+        command
+            .args([
+                "-e",
+                "on run argv",
+                "-e",
+                "do shell script (item 1 of argv) with administrator privileges",
+                "-e",
+                "end run",
+                "--",
+            ])
+            .arg(format!("/bin/sh -eu -c {}", shell_quote(script)));
+        command
+    } else {
+        let mut command = Command::new("/bin/sh");
+        command.args(["-eu", "-c", script]);
+        command
+    };
+    let output = command
+        .output()
+        .map_err(|error| format!("启动 macOS 文件操作失败：{error}"))?;
+    if !output.status.success() {
+        return Err(format!(
+            "macOS 文件操作失败（退出码 {:?}）：{}{}",
+            output.status.code(),
+            String::from_utf8_lossy(&output.stdout),
+            String::from_utf8_lossy(&output.stderr)
+        ));
+    }
+    Ok(String::from_utf8_lossy(&output.stdout).trim().into())
 }

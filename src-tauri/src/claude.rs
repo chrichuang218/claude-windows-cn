@@ -1,3 +1,4 @@
+pub use crate::util::compare_versions;
 use crate::{
     operation::{OperationOutcome, OperationState},
     patch,
@@ -835,25 +836,6 @@ pub fn create_shortcut(operation: &OperationState) -> Result<OperationOutcome, S
     } else {
         "Claude Desktop 桌面快捷方式已创建。"
     }))
-}
-
-pub fn compare_versions(left: &str, right: &str) -> Ordering {
-    let parse = |version: &str| {
-        version
-            .split('.')
-            .map(|part| part.parse::<u64>().unwrap_or(0))
-            .collect::<Vec<_>>()
-    };
-    let left = parse(left);
-    let right = parse(right);
-    (0..left.len().max(right.len()))
-        .map(|index| {
-            left.get(index)
-                .unwrap_or(&0)
-                .cmp(right.get(index).unwrap_or(&0))
-        })
-        .find(|order| *order != Ordering::Equal)
-        .unwrap_or(Ordering::Equal)
 }
 
 #[cfg(test)]

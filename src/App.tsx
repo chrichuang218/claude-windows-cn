@@ -91,10 +91,6 @@ const confirmationLabels: Partial<Record<OperationKind, string>> = {
   uninstall_assistant: '卸载助手',
 }
 
-function assistantUpdateMessage(message: string): string {
-  return message === '该仓库目前没有 GitHub Release。' ? '暂无可用的助手更新。' : message
-}
-
 const defaultConfig: AssistantConfig = {
   assistantInstallMode: 'user',
   assistantPath: '',
@@ -171,7 +167,6 @@ function App() {
   const [actionError, setActionError] = useState('')
   const [settingsNotice, setSettingsNotice] = useState('')
   const [loadError, setLoadError] = useState('')
-  const [assistantUpdate, setAssistantUpdate] = useState<{ available: boolean; version: string } | null>(null)
   const handledOperation = useRef<number | null>(null)
   const logRef = useRef<HTMLDivElement>(null)
   const followLogs = useRef(true)
@@ -193,6 +188,7 @@ function App() {
   const operationId = operation?.id
   const activePage = page === 'operation' ? returnPage(operation?.kind ?? 'check_claude_update') : page
   const logsOpen = logsExpanded || operation?.state === 'error'
+  const assistantUpdate = assistant?.updateAvailable == null ? null : { available: assistant.updateAvailable, version: assistant.latestVersion ?? '' }
   const title = page === 'startup' ? 'Claude 中文助手' : page === 'setup' ? '安装 Claude 中文助手' : page === 'overview' ? '概览' : page === 'localize' ? '汉化' : operation?.state === 'error' ? '操作失败' : operation ? operationTitles[operation.kind] : '执行'
 
   const refreshStatus = useCallback(async () => {
@@ -203,7 +199,6 @@ function App() {
     const errors: string[] = []
     if (assistantResult.status === 'fulfilled') {
       setAssistant(assistantResult.value)
-      if (assistantResult.value.updateAvailable != null) setAssistantUpdate({ available: assistantResult.value.updateAvailable, version: assistantResult.value.latestVersion ?? '' })
     }
     else errors.push(`助手状态：${errorText(assistantResult.reason)}`)
     if (claudeResult.status === 'fulfilled') {
@@ -257,7 +252,6 @@ function App() {
         setAssistant(assistantResult.value)
         setClaude(claudeResult.value)
         setSelectedMode(claudeResult.value.appliedMode ?? 'safe')
-        if (assistantResult.value.updateAvailable != null) setAssistantUpdate({ available: assistantResult.value.updateAvailable, version: assistantResult.value.latestVersion ?? '' })
         const loaded = configResult.value
         setConfig({ ...loaded, assistantPath: loaded.assistantPath || assistantResult.value.defaultPaths[loaded.assistantInstallMode] })
         const snapshot = operationResult.value
@@ -336,9 +330,6 @@ function App() {
     if (!operation || operation.state !== 'success' || handledOperation.current === operation.id) return
     handledOperation.current = operation.id
     const finished = operation
-    if (finished.kind === 'check_assistant_update' && finished.updateAvailable !== null) {
-      setAssistantUpdate({ available: finished.updateAvailable, version: finished.latestVersion ?? '' })
-    }
     void refreshStatus().then((currentAssistant) => {
       if (finished.kind === 'uninstall_assistant') {
         setPage(currentAssistant?.installed ? 'overview' : 'setup')
@@ -464,11 +455,11 @@ function App() {
   const operationFailed = operation?.state === 'error'
   const operationProgress = operation?.progress
   const operationStep = operationFailed && operation
-    ? errorSummary(operation.kind === 'check_assistant_update' ? assistantUpdateMessage(operation.message || operation.step) : operation.message || operation.step)
+    ? errorSummary(operation.message || operation.step)
     : operation?.step.trim() === title ? '' : operation?.step.trim() ?? ''
 
   return (
-    <div id="claude-assistant-sketch" data-variant="tabs" data-platform={platform} aria-label="Claude 中文助手">
+    <div id="claude-assistant-sketch" data-platform={platform} aria-label="Claude 中文助手">
       <div className="ca-window">
         <div className="ca-titlebar" data-tauri-drag-region>
           <img src="/claude-icon.svg" alt="" data-tauri-drag-region />
@@ -554,7 +545,7 @@ function App() {
           <label className="ca-settings-row"><div><h3>自动检查更新</h3><p>助手运行时，每天检查 Claude 和助手更新。</p></div><input className="ca-switch" type="checkbox" role="switch" checked={config.dailyUpdateCheck} aria-label="每天自动检查更新" onChange={(event) => void changeDailyCheck(event.target.checked)} /></label>
           <div className="ca-settings-row"><div><h3>桌面快捷方式</h3><p>创建 Claude Desktop 桌面入口。</p></div><button type="button" className="ca-button" disabled={!claude?.installed} onClick={() => void startOperation('create_claude_shortcut')}>创建或修复</button></div>
           <section className="ca-settings-section" aria-labelledby="ca-about-title"><h3 id="ca-about-title" className="ca-settings-group">关于助手</h3>
-            <div className="ca-settings-row"><div><h3>Claude 中文助手 <span className="ca-settings-version">{assistant?.version}</span></h3><p>{assistantUpdateMessage(assistant?.updateCheckError ?? '') || (assistantUpdate ? assistantUpdate.available ? `发现新版本 ${assistantUpdate.version}` : assistantUpdate.version ? '已是最新版本。' : '暂无可用的助手更新。' : assistant ? '检查助手的新版本。' : '正在读取版本')}</p></div><button type="button" className="ca-button" onClick={() => void startOperation('check_assistant_update')}>检查更新</button></div>
+            <div className="ca-settings-row"><div><h3>Claude 中文助手 <span className="ca-settings-version">{assistant?.version}</span></h3><p>{assistant?.updateCheckError || (assistantUpdate ? assistantUpdate.available ? `发现新版本 ${assistantUpdate.version}` : assistantUpdate.version ? '已是最新版本。' : '暂无可用的助手更新。' : assistant ? '检查助手的新版本。' : '正在读取版本')}</p></div><button type="button" className="ca-button" onClick={() => void startOperation('check_assistant_update')}>检查更新</button></div>
             {assistantUpdate?.available ? <div className="ca-settings-row"><div><h3>安装助手更新</h3><p>下载后验证摘要与程序自检。</p></div><button type="button" className="ca-button" onClick={() => confirmAction('更新助手？', '将校验下载文件并替换当前助手，失败时恢复旧文件。', 'install_assistant_update')}>安装更新</button></div> : null}
             {assistant?.updateResult ? <p className="ca-settings-message" data-error={assistant.updateResultOk === false} role={assistant.updateResultOk === false ? 'alert' : 'status'}>{assistant.updateResult}</p> : null}
             {settingsNotice && !settingsNotice.includes('卸载脚本已启动') ? <p className="ca-settings-message" role="status">{settingsNotice}</p> : null}

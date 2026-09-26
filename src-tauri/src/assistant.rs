@@ -112,14 +112,7 @@ fn installed_record() -> Result<Option<InstallManifest>, String> {
 }
 
 fn save_installed_record(manifest: &InstallManifest) -> Result<(), String> {
-    let path = installed_record_path()?;
-    let stage = path.with_extension("json.tmp");
-    fs::write(
-        &stage,
-        serde_json::to_vec_pretty(manifest).map_err(|error| error.to_string())?,
-    )
-    .map_err(|error| error.to_string())?;
-    util::replace_file(&stage, &path)
+    util::write_json(&installed_record_path()?, manifest)
 }
 
 pub fn load_config() -> Result<AssistantConfig, String> {
@@ -144,13 +137,8 @@ pub fn save_config(config: AssistantConfig) -> Result<AssistantConfig, String> {
     let was_enabled = load_config()
         .map(|previous| previous.daily_update_check)
         .unwrap_or(false);
-    let path = config_path()?;
-    let parent = path.parent().ok_or("无法确定设置目录。")?;
-    fs::create_dir_all(parent).map_err(|error| error.to_string())?;
-    let stage = path.with_extension("json.tmp");
-    let bytes = serde_json::to_vec_pretty(&config).map_err(|error| error.to_string())?;
-    fs::write(&stage, bytes).map_err(|error| format!("写入助手设置失败：{error}"))?;
-    util::replace_file(&stage, &path).map_err(|error| format!("保存助手设置失败：{error}"))?;
+    util::write_json(&config_path()?, &config)
+        .map_err(|error| format!("保存助手设置失败：{error}"))?;
     if config.daily_update_check && !was_enabled {
         crate::self_update::trigger_daily_check();
     }

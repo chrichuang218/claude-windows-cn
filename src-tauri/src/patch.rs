@@ -194,16 +194,7 @@ fn read_pending() -> Result<Option<PendingPatch>, String> {
 }
 
 fn save_pending(pending: &PendingPatch) -> Result<(), String> {
-    let path = pending_path()?;
-    let parent = path.parent().ok_or("无法确定汉化记录目录。")?;
-    fs::create_dir_all(parent).map_err(|error| error.to_string())?;
-    let stage = path.with_extension("json.tmp");
-    fs::write(
-        &stage,
-        serde_json::to_vec_pretty(pending).map_err(|error| error.to_string())?,
-    )
-    .map_err(|error| error.to_string())?;
-    util::replace_file(&stage, &path)
+    util::write_json(&pending_path()?, pending)
 }
 
 fn clear_pending() -> Result<(), String> {
@@ -222,16 +213,8 @@ fn read_manifest() -> Result<Option<BackupManifest>, String> {
 }
 
 fn save_manifest(manifest: &BackupManifest) -> Result<(), String> {
-    let path = manifest_path()?;
-    let parent = path.parent().ok_or("无法确定备份记录目录。")?;
-    fs::create_dir_all(parent).map_err(|error| error.to_string())?;
-    let stage = path.with_extension("json.tmp");
-    fs::write(
-        &stage,
-        serde_json::to_vec_pretty(manifest).map_err(|error| error.to_string())?,
-    )
-    .map_err(|error| error.to_string())?;
-    util::replace_file(&stage, &path).map_err(|error| format!("保存备份记录失败：{error}"))
+    util::write_json(&manifest_path()?, manifest)
+        .map_err(|error| format!("保存备份记录失败：{error}"))
 }
 
 pub fn state(package: &ClaudePackage) -> Result<PatchState, String> {

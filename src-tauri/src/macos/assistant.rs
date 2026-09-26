@@ -1,6 +1,6 @@
 use crate::{
     operation::{OperationOutcome, OperationState},
-    util,
+    util::{self, run_shell, shell_quote},
 };
 use serde::{Deserialize, Serialize};
 use std::{
@@ -56,7 +56,6 @@ struct InstallManifest {
     product: String,
     mode: String,
     install_path: String,
-    version: String,
 }
 
 fn home() -> Result<PathBuf, String> {
@@ -285,47 +284,6 @@ pub fn status() -> Result<AssistantStatus, String> {
     })
 }
 
-pub(crate) fn shell_quote(value: impl AsRef<std::ffi::OsStr>) -> String {
-    format!(
-        "'{}'",
-        value.as_ref().to_string_lossy().replace('\'', "'\\''")
-    )
-}
-
-pub(crate) fn run_shell(script: &str, elevated: bool) -> Result<String, String> {
-    let mut command = if elevated {
-        let mut command = Command::new("/usr/bin/osascript");
-        command
-            .args([
-                "-e",
-                "on run argv",
-                "-e",
-                "do shell script (item 1 of argv) with administrator privileges",
-                "-e",
-                "end run",
-                "--",
-            ])
-            .arg(format!("/bin/sh -eu -c {}", shell_quote(script)));
-        command
-    } else {
-        let mut command = Command::new("/bin/sh");
-        command.args(["-eu", "-c", script]);
-        command
-    };
-    let output = command
-        .output()
-        .map_err(|error| format!("启动 macOS 文件操作失败：{error}"))?;
-    if !output.status.success() {
-        return Err(format!(
-            "macOS 文件操作失败（退出码 {:?}）：{}{}",
-            output.status.code(),
-            String::from_utf8_lossy(&output.stdout),
-            String::from_utf8_lossy(&output.stderr)
-        ));
-    }
-    Ok(String::from_utf8_lossy(&output.stdout).trim().into())
-}
-
 fn plist_value(bundle: &Path, key: &str) -> Result<String, String> {
     let output = Command::new("/usr/libexec/PlistBuddy")
         .args(["-c", &format!("Print :{key}")])
@@ -515,16 +473,6 @@ fi
     })
 }
 
-pub(crate) fn update_install_version(target: &Path, version: &str) -> Result<(), String> {
-    if let Some(mut record) = installed_record()? {
-        if Path::new(&record.install_path).join(APP_NAME) == target {
-            record.version = version.into();
-            write_json(&installed_record_path()?, &record)?;
-        }
-    }
-    Ok(())
-}
-
 pub fn install(
     config: AssistantConfig,
     operation: &OperationState,
@@ -596,7 +544,6 @@ pub fn install(
                 product: "claude-windows-cn".into(),
                 mode: config.assistant_install_mode.clone(),
                 install_path: destination.display().to_string(),
-                version: env!("CARGO_PKG_VERSION").into(),
             },
         )
     })();

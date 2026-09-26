@@ -1,6 +1,8 @@
+pub use crate::util::compare_versions;
 use crate::{
     operation::{OperationOutcome, OperationState},
-    patch, util,
+    patch,
+    util::{self, run_shell, shell_quote as sh_quote},
 };
 use serde::{Deserialize, Serialize};
 use std::{
@@ -22,21 +24,13 @@ const SIGNING_REQUIREMENT: &str =
 #[serde(rename_all = "PascalCase")]
 pub struct ClaudePackage {
     pub package_full_name: String,
-    pub package_family_name: String,
     pub version: String,
-    pub architecture: String,
     pub install_location: String,
 }
 
 impl ClaudePackage {
     pub fn root(&self) -> PathBuf {
         PathBuf::from(&self.install_location)
-    }
-    pub fn resources(&self) -> PathBuf {
-        self.root().join("Contents/Resources")
-    }
-    pub fn exe(&self) -> PathBuf {
-        self.root().join("Contents/MacOS/Claude")
     }
 }
 
@@ -71,27 +65,6 @@ fn run(command: &mut Command) -> Result<String, String> {
         ));
     }
     Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
-}
-
-pub(crate) fn sh_quote(value: impl AsRef<str>) -> String {
-    format!("'{}'", value.as_ref().replace('\'', "'\\''"))
-}
-
-pub(crate) fn run_shell(script: &str, elevated: bool) -> Result<String, String> {
-    if !elevated {
-        return run(Command::new("/bin/sh").args(["-c", script]));
-    }
-    // Pass the shell program as an AppleScript argument, never as AppleScript source.
-    run(Command::new("/usr/bin/osascript").args([
-        "-e",
-        "on run argv",
-        "-e",
-        "do shell script (item 1 of argv) with administrator privileges",
-        "-e",
-        "end run",
-        "--",
-        script,
-    ]))
 }
 
 fn home() -> Result<PathBuf, String> {
@@ -186,9 +159,7 @@ pub(crate) fn read_package(app: &Path) -> Result<ClaudePackage, String> {
     }
     Ok(ClaudePackage {
         package_full_name: format!("{BUNDLE_ID}_{version}_{build}"),
-        package_family_name: BUNDLE_ID.into(),
         version,
-        architecture: architecture.into(),
         install_location: app.to_string_lossy().into(),
     })
 }
@@ -523,14 +494,14 @@ fn replace_bundle_at(
     } else {
         None
     };
-    let target_q = sh_quote(target.to_string_lossy());
-    let stage_q = sh_quote(stage.to_string_lossy());
-    let previous_q = sh_quote(previous.to_string_lossy());
+    let target_q = sh_quote(target);
+    let stage_q = sh_quote(&stage);
+    let previous_q = sh_quote(&previous);
     // Repeat the path checks inside the privileged process, after any password
     // prompt, and again immediately before changing the installed app.
     let guard = target
         .ancestors()
-        .map(|path| format!("test ! -L {}", sh_quote(path.to_string_lossy())))
+        .map(|path| format!("test ! -L {}", sh_quote(path)))
         .collect::<Vec<_>>()
         .join("\n");
     let check = if let Some(old) = &old {
@@ -556,7 +527,7 @@ fi
 "#,
         stage = stage_q,
         previous = previous_q,
-        source = sh_quote(source.to_string_lossy()),
+        source = sh_quote(source),
         target = target_q
     );
     if let Err(error) = run_shell(&install, elevated) {
@@ -798,25 +769,6 @@ pub fn create_shortcut(operation: &OperationState) -> Result<OperationOutcome, S
     Ok(OperationOutcome::done(
         "Claude Desktop 桌面快捷方式已就绪。",
     ))
-}
-
-pub fn compare_versions(left: &str, right: &str) -> Ordering {
-    let parse = |version: &str| {
-        version
-            .split('.')
-            .map(|part| part.parse::<u64>().unwrap_or(0))
-            .collect::<Vec<_>>()
-    };
-    let left = parse(left);
-    let right = parse(right);
-    (0..left.len().max(right.len()))
-        .map(|index| {
-            left.get(index)
-                .unwrap_or(&0)
-                .cmp(right.get(index).unwrap_or(&0))
-        })
-        .find(|order| *order != Ordering::Equal)
-        .unwrap_or(Ordering::Equal)
 }
 
 #[cfg(test)]
