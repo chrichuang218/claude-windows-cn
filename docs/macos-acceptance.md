@@ -1,14 +1,16 @@
 # macOS 发布验收
 
-当前状态：已提供实现与 CI 配置，未完成 Mac 实机验收，尚未发布通过验收的 macOS 包。以下项目均待执行；在对应硬件完成后填写系统版本、助手与 Claude 版本、结果及必要日志。CI 构建成功不能代替交互和业务功能验收。
+当前状态：Mac 双架构原生构建、自动测试和包内自检已通过，尚未完成真实 Claude 的交互验收，也尚未发布通过验收的 macOS 包。下表中标记待执行的项目仍需在对应硬件填写系统版本、助手与 Claude 版本、结果及必要日志。CI 构建成功不能代替交互和业务功能验收。
 
 2026-09-26 在 Windows 开发环境完成的检查：
 
 - 前端 lint、TypeScript 与生产构建通过；Rust 格式及 `cargo check` 通过。
 - Windows Rust 回归 33 项通过，3 项原有真实安装/联网测试保持忽略；抽取共享更新逻辑后，相关 7 项回归再次通过。
-- Mac 模块经临时宿主入口完成类型检查；可在 Windows 执行的更新解析、Mach-O 架构识别、官方源校验、备份文件与记录回退共 8 项通过。宿主入口仅替代无法调用的 `libproc` 进程查询，检查后移除；这不等于 Apple 目标编译通过，Unix 权限/符号链接及系统命令分支仍待原生 CI。
+- Mac 模块经临时宿主入口完成类型检查；可在 Windows 执行的更新解析、Mach-O 架构识别、官方源校验、备份文件与记录回退共 8 项通过。宿主入口仅替代无法调用的 `libproc` 进程查询，检查后移除；Windows 检查不覆盖的 Unix 权限/符号链接及系统命令分支随后由下述原生 CI 验证。
 - Python 适配器 8 项通过，1 项因 Windows 符号链接权限不足跳过；覆盖两种模式、隔离目标、禁止上游修改真实用户配置、错误传播，以及 Python 优化模式下仍拒绝不安全 ZIP。还核验了真实上游的导入和参数接口，未对真实 Claude 执行补丁。
 - 此次只读核验的上游 `scripts/patch_claude_zh_cn.py` SHA256 为 `0cbc14916f2abc0f825ffe8ebef3dd16c0e6c956a29e5b208707f17593884f91`；运行时仍按既有约定在线获取最新引擎。
+
+同日在 GitHub 原生 runner 上，[Apple Silicon](https://github.com/chrichuang218/claude-windows-cn/actions/runs/36217398121/job/108335997205) 和 [Intel](https://github.com/chrichuang218/claude-windows-cn/actions/runs/36217398121/job/108335997306) 均通过 16 项 Rust 测试、8 项 Python 适配器测试、生产 `.app` 构建、包内 `--self-test`、代码签名及 SHA256 校验，并生成测试包。原生测试包含整包替换失败回退、清理失败保留有效新包、路径与符号链接保护；Python 仅跳过未提供外部上游快照的可选接口检查。
 
 最低系统为 macOS 13。Apple Silicon 使用 `claude-cn-macos-arm64.app.tar.gz`，Intel 使用 `claude-cn-macos-x64.app.tar.gz`；都应解压得到 `Claude 中文助手.app`。各项分别在两个架构验证；Cowork 若不支持当前硬件，应记录官方限制，不能记为测试通过。
 
@@ -16,7 +18,7 @@
 
 | 范围 | 执行与通过条件 | Apple Silicon | Intel |
 | --- | --- | --- | --- |
-| 构建与自检 | CI Rust 测试通过；构建 `.app`；包内程序 `--self-test` 成功；SHA256、包结构与代码签名验证通过 | 待执行 | 待执行 |
+| 构建与自检 | CI Rust 测试通过；构建 `.app`；包内程序 `--self-test` 成功；SHA256、包结构与代码签名验证通过 | 原生 CI 通过 | 原生 CI 通过 |
 | 首次启动 | 从下载位置解压运行；记录 Gatekeeper 行为；窗口、缩放、关闭/最小化及键盘操作可用 | 待执行 | 待执行 |
 | 助手安装 | 分别测试便携原地、用户、系统安装；自选含空格/中文的目录；拒绝覆盖无归属的同名应用 | 待执行 | 待执行 |
 | 系统权限 | 普通账户遇到受保护目录时正确请求授权；取消后明确失败并保留原文件 | 待执行 | 待执行 |

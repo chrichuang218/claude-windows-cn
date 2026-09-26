@@ -83,8 +83,8 @@ jobs:
         shell: pwsh
         run: |
           $exe = 'src-tauri/target/${{ matrix.target }}/release/claude-windows-cn.exe'
-          & $exe --self-test
-          if ($LASTEXITCODE -ne 0) { throw '助手自检失败。' }
+          $selfTestProcess = Start-Process -FilePath (Resolve-Path -LiteralPath $exe).Path -ArgumentList '--self-test' -Wait -PassThru -WindowStyle Hidden
+          if ($selfTestProcess.ExitCode -ne 0) { throw "助手自检失败（退出码 $($selfTestProcess.ExitCode)）。" }
           New-Item -ItemType Directory -Path artifacts | Out-Null
           Copy-Item -LiteralPath $exe -Destination artifacts/claude-windows-cn.exe
           $hash = (Get-FileHash -LiteralPath artifacts/claude-windows-cn.exe -Algorithm SHA256).Hash.ToLowerInvariant()

@@ -11,7 +11,7 @@
 
 ### 验证边界
 
-- 当前开发环境为 Windows，没有进行 Mac 实机验收；新增 CI 配置尚须在 GitHub runner 上实际执行。
+- Mac 双架构已在 GitHub 原生 runner 通过自动测试、生产构建、包内自检及签名/摘要校验；真实 Claude 的交互验收仍待执行。
 - macOS 官方安装更新、汉化恢复、权限授权、Cowork、助手自更新和运行中卸载须按 [验收清单](docs/macos-acceptance.md) 补充实际结果。
 - CI 的 macOS 包使用本地签名，未配置 Developer ID 签名和 Apple 公证；尚不承诺正式发行包的 Gatekeeper 体验。
 
