@@ -158,7 +158,7 @@ pub fn self_test() -> bool {
     env!("CARGO_PKG_NAME") == "claude-windows-cn"
         && env::current_exe().ok().is_some_and(|path| path.is_file())
         && std::panic::catch_unwind(|| {
-            let _: tauri::Context<tauri::Wry> = tauri::generate_context!();
+            let _ = crate::app_context();
         })
         .is_ok()
 }

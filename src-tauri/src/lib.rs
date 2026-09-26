@@ -21,6 +21,12 @@ fn get_platform() -> &'static str {
     std::env::consts::OS
 }
 
+pub(crate) fn app_context() -> tauri::Context<tauri::Wry> {
+    // On macOS this macro also defines the embedded Info.plist symbol, so
+    // startup and the side-effect-free updater check must share one expansion.
+    tauri::generate_context!()
+}
+
 fn initial_window_size(
     design: tauri::LogicalSize<f64>,
     web_scale: f64,
@@ -152,7 +158,7 @@ pub fn run() {
     }
 
     self_update::start_daily_scheduler();
-    let mut context = tauri::generate_context!();
+    let mut context = app_context();
     // Tauri decodes only the first ICO frame (16px); do not upscale it for the taskbar.
     context.set_default_window_icon(Some(tauri::include_image!("icons/128x128@2x.png")));
     tauri::Builder::default()

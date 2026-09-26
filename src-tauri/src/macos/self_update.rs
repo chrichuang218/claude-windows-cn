@@ -279,7 +279,7 @@ pub fn self_test() -> bool {
             .and_then(|bundle| verify_architecture(&assistant::bundle_executable(&bundle)))
             .is_ok()
         && std::panic::catch_unwind(|| {
-            let _: tauri::Context<tauri::Wry> = tauri::generate_context!();
+            let _ = crate::app_context();
         })
         .is_ok()
 }

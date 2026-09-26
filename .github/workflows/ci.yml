@@ -54,6 +54,7 @@ jobs:
         with:
           workspaces: src-tauri
           key: ${{ matrix.target }}
+          cache-on-failure: true
 
       - name: 安装前端依赖
         run: npm ci
