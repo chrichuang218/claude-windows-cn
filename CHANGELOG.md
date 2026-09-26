@@ -1,5 +1,20 @@
 # 更新日志
 
+## 未发布
+
+### 新增
+
+- macOS 后端对齐 Windows 功能：官方 Claude 检测、安装、更新与启动，两种汉化和可验证恢复，助手三种安装方式、桌面入口、更新检查、自更新与卸载。
+- macOS 以完整 `.app` 为安装、备份和替换单位，使用独立平台实现并复用现有界面、操作命令和引擎缓存。
+- 平台相关安装文案与 macOS 字体适配；新增 macOS 13+ 应用包配置。
+- CI 增加 Windows x64、macOS Apple Silicon 和 Intel 的测试、构建、自检与 SHA256 产物，不自动发布 Release。
+
+### 验证边界
+
+- 当前开发环境为 Windows，没有进行 Mac 实机验收；新增 CI 配置尚须在 GitHub runner 上实际执行。
+- macOS 官方安装更新、汉化恢复、权限授权、Cowork、助手自更新和运行中卸载须按 [验收清单](docs/macos-acceptance.md) 补充实际结果。
+- CI 的 macOS 包使用本地签名，未配置 Developer ID 签名和 Apple 公证；尚不承诺正式发行包的 Gatekeeper 体验。
+
 ## 0.1.2 - 2026-09-25
 
 ### 修复

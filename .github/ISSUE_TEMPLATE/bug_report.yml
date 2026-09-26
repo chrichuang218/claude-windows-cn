@@ -19,7 +19,7 @@ body:
     id: os
     attributes:
       label: 操作系统
-      placeholder: 例如 Windows 11 23H2
+      placeholder: 例如 Windows 11 23H2 x64，或 macOS 15 Apple Silicon / Intel
     validations:
       required: true
 

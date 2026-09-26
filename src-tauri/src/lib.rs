@@ -1,14 +1,25 @@
+#[cfg_attr(target_os = "macos", path = "macos/assistant.rs")]
 mod assistant;
+#[cfg_attr(target_os = "macos", path = "macos/claude.rs")]
 mod claude;
+mod engine_cache;
 mod operation;
+#[cfg_attr(target_os = "macos", path = "macos/patch.rs")]
 mod patch;
+#[cfg_attr(target_os = "macos", path = "macos/self_update.rs")]
 mod self_update;
+#[cfg_attr(target_os = "macos", path = "macos/util.rs")]
 mod util;
 
 use assistant::{AssistantConfig, AssistantStatus};
 use claude::ClaudeStatus;
 use operation::{OperationSnapshot, OperationState};
 use tauri::Manager;
+
+#[tauri::command]
+fn get_platform() -> &'static str {
+    std::env::consts::OS
+}
 
 fn initial_window_size(
     design: tauri::LogicalSize<f64>,
@@ -147,6 +158,7 @@ pub fn run() {
     tauri::Builder::default()
         .manage(OperationState::new())
         .invoke_handler(tauri::generate_handler![
+            get_platform,
             fit_initial_window,
             get_status,
             get_assistant_status,

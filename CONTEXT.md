@@ -1,6 +1,6 @@
 # Claude 中文助手
 
-管理 Windows 上的官方 Claude Desktop，并提供可选的中文补丁。助手与被管理的 Claude Desktop 是两个独立产品。
+管理 Windows 与 macOS 上的官方 Claude Desktop，并提供可选的中文补丁。两端功能范围一致；平台相关操作使用独立后端，共享界面、命令与操作状态。助手与被管理的 Claude Desktop 是两个独立产品。macOS 实机验收状态见 `docs/macos-acceptance.md`。
 
 ## 术语
 
@@ -11,6 +11,8 @@ _避免_：用「Claude」同时指助手和官方应用。
 
 **助手安装方式**：便携方式、用户安装、系统安装三个分发选项；只决定助手的安装范围。
 _避免_：Claude 便携版、用助手安装方式指代官方应用的安装方式。
+
+**助手安装位置**：配置中的 `assistantPath` 表示目录。Windows 在目录内放置 EXE；macOS 在目录内放置完整的 `Claude 中文助手.app`，自更新以应用包为单位替换。macOS 用户安装默认为 `~/Applications`，系统安装默认为 `/Applications`。
 
 **助手快捷方式**：打开助手界面的桌面入口，由安装页的勾选项决定。
 

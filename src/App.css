@@ -1,5 +1,6 @@
     #claude-assistant-sketch { --ca-bg: #faf9f6; --ca-surface: #fff; --ca-side: #f0eee8; --ca-ink: #292722; --ca-muted: #716b63; --ca-line: #e4e0d8; --ca-accent: #a84f35; --ca-on-accent: #fff; --ca-tint: #f5ebe4; --ca-good: #367458; --ca-warning: #865426; --ca-warning-bg: #f7efe4; --ca-hover: #e9e5dd; --ca-danger: #ae3e37; color-scheme: light; width:100%; color:var(--ca-ink); font-family:"Segoe UI Variable Text","Microsoft YaHei UI","Segoe UI",sans-serif; font-size:14px; line-height:1.5; }
     #claude-assistant-sketch * { box-sizing:border-box; }
+    #claude-assistant-sketch[data-platform="macos"] { font-family:-apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif; }
     #claude-assistant-sketch [hidden] { display:none !important; }
     #claude-assistant-sketch button, #claude-assistant-sketch input { font:inherit; color:inherit; }
     #claude-assistant-sketch button { cursor:inherit; }

@@ -151,21 +151,23 @@ impl OperationState {
     pub fn download_progress(&self, downloaded: u64, total: Option<u64>) {
         let mut current = self.lock();
         let mib = 1024.0 * 1024.0;
+        let package = if cfg!(target_os = "macos") {
+            "官方 macOS 应用"
+        } else {
+            "官方 x64 MSIX"
+        };
         current.step = match total.filter(|total| *total > 0) {
             Some(total) => {
                 current.progress = Some(((downloaded.saturating_mul(100) / total).min(100)) as u8);
                 format!(
-                    "下载官方 x64 MSIX：{:.1} / {:.1} MiB",
+                    "下载{package}：{:.1} / {:.1} MiB",
                     downloaded as f64 / mib,
                     total as f64 / mib
                 )
             }
             None => {
                 current.progress = None;
-                format!(
-                    "下载官方 x64 MSIX：已下载 {:.1} MiB",
-                    downloaded as f64 / mib
-                )
+                format!("下载{package}：已下载 {:.1} MiB", downloaded as f64 / mib)
             }
         };
     }

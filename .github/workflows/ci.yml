@@ -2,14 +2,31 @@ name: CI
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, 'codex/**']
   pull_request:
     branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   build:
-    name: Lint & Build
-    runs-on: windows-latest
+    name: Check & Package (${{ matrix.platform }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: windows-x64
+            os: windows-latest
+            target: x86_64-pc-windows-msvc
+          - platform: macos-arm64
+            os: macos-15
+            target: aarch64-apple-darwin
+          - platform: macos-x64
+            os: macos-15-intel
+            target: x86_64-apple-darwin
+    runs-on: ${{ matrix.os }}
 
     steps:
       - name: 检出代码
@@ -18,16 +35,25 @@ jobs:
       - name: 安装 Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - name: 安装 Rust 工具链
         uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+          components: rustfmt
+
+      - name: 安装 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
 
       - name: 缓存 Cargo
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
+          key: ${{ matrix.target }}
 
       - name: 安装前端依赖
         run: npm ci
@@ -38,5 +64,56 @@ jobs:
       - name: 类型检查与前端构建
         run: npm run build
 
-      - name: 检查 Rust 后端
-        run: cargo check --manifest-path src-tauri/Cargo.toml
+      - name: 检查 Rust 格式
+        run: cargo fmt --check --manifest-path src-tauri/Cargo.toml
+
+      - name: 测试 Rust 后端
+        run: cargo test --manifest-path src-tauri/Cargo.toml --target ${{ matrix.target }}
+
+      - name: 测试 macOS 汉化适配器
+        run: python -m unittest discover -s tests -p "test_macos_engine_adapter.py" -v
+
+      - name: 构建 Windows 助手
+        if: runner.os == 'Windows'
+        run: npm run tauri build -- --target ${{ matrix.target }} --no-bundle
+
+      - name: Windows 程序自检与摘要
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $exe = 'src-tauri/target/${{ matrix.target }}/release/claude-windows-cn.exe'
+          & $exe --self-test
+          if ($LASTEXITCODE -ne 0) { throw '助手自检失败。' }
+          New-Item -ItemType Directory -Path artifacts | Out-Null
+          Copy-Item -LiteralPath $exe -Destination artifacts/claude-windows-cn.exe
+          $hash = (Get-FileHash -LiteralPath artifacts/claude-windows-cn.exe -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  claude-windows-cn.exe" | Set-Content -Encoding utf8NoBOM artifacts/claude-windows-cn.exe.sha256
+
+      - name: 构建 macOS 应用
+        if: runner.os == 'macOS'
+        env:
+          APPLE_SIGNING_IDENTITY: '-'
+        run: npm run tauri build -- --target ${{ matrix.target }} --bundles app
+
+      - name: macOS 程序自检、打包与摘要
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          set -euo pipefail
+          bundle_dir='src-tauri/target/${{ matrix.target }}/release/bundle/macos'
+          app="$bundle_dir/Claude 中文助手.app"
+          "$app/Contents/MacOS/claude-windows-cn" --self-test
+          codesign --verify --deep --strict "$app"
+          mkdir artifacts
+          archive='claude-cn-${{ matrix.platform }}.app.tar.gz'
+          COPYFILE_DISABLE=1 tar -czf "artifacts/$archive" -C "$bundle_dir" 'Claude 中文助手.app'
+          cd artifacts
+          shasum -a 256 "$archive" > "$archive.sha256"
+          shasum -a 256 -c "$archive.sha256"
+
+      - name: 保存安装产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: claude-cn-${{ matrix.platform }}
+          path: artifacts/*
+          if-no-files-found: error

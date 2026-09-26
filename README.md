@@ -2,9 +2,10 @@
 
 # Claude 中文助手
 
-**在 Windows 上管理官方 Claude Desktop，按需开启简体中文体验。**
+**在 Windows 与 macOS 上管理官方 Claude Desktop，按需开启简体中文体验。**
 
 ![平台 Windows x64](https://img.shields.io/badge/平台-Windows_x64-0078D4)
+![平台 macOS arm64 / x64](https://img.shields.io/badge/平台-macOS_arm64_%2F_x64-555555)
 [![许可证 MIT](https://img.shields.io/badge/License-MIT-AE563D)](LICENSE)
 
 [下载助手](https://github.com/chrichuang218/claude-windows-cn/releases/latest) · [界面预览](#界面预览) · [快速上手](#快速上手) · [反馈问题](https://github.com/chrichuang218/claude-windows-cn/issues)
@@ -14,6 +15,8 @@
 安装、更新、启动 Claude Desktop，以及应用或恢复汉化，都在一个小工具里完成。已有官方应用可以直接检测使用；汉化由你选择，更新后也不会自动重新应用。
 
 > 本项目是第三方工具，与 Anthropic 没有从属关系。助手和 Claude Desktop 是两个独立应用，分别安装、更新和卸载。
+
+> macOS 已加入与 Windows 对齐的功能实现及双架构构建流程，尚未经过 Mac 实机验收，也尚未发布经过验收的 macOS 安装包。当前截图来自 Windows；构建成功不等于 Claude 启动、汉化恢复和 Cowork 已验证。验收范围见 [macOS 验收清单](docs/macos-acceptance.md)。
 
 ## 界面预览
 
@@ -78,14 +81,22 @@
 
 ## 快速上手
 
-1. 前往 [Releases](https://github.com/chrichuang218/claude-windows-cn/releases/latest)，下载 `claude-windows-cn.exe`。发行附件同时提供 `.sha256` 文件，便于核对下载完整性。
-2. 启动助手，选择安装方式和位置。一般选 **用户安装**；**便携方式**默认在当前 EXE 所在目录使用，不再创建子目录或复制程序。选择其他位置或用户/系统安装时，会保留原始下载文件；安装完成并退出后可删除原始文件，今后使用安装目录中的程序或快捷方式。
+1. Windows 前往 [Releases](https://github.com/chrichuang218/claude-windows-cn/releases/latest)，下载 `claude-windows-cn.exe`。macOS 在完成验收和正式发布前，请按下方步骤从源码构建；CI 也会生成供测试的应用包。各平台产物名称见下表，均配套 `.sha256` 摘要。
+2. 启动助手，选择安装方式和位置。一般选 **用户安装**；**便携方式**默认在当前 EXE 或 `.app` 所在目录使用，不再复制程序。选择其他位置或用户/系统安装时，会保留原始下载文件；安装完成并退出后可删除原始文件，今后使用安装目录中的程序或快捷方式。macOS 用户安装默认为 `~/Applications`，系统安装默认为 `/Applications`，安装目录内的应用名称为 `Claude 中文助手.app`。
 3. 在 **概览** 查看 Claude Desktop 状态。已安装则直接使用；未安装可通过助手下载安装。
 4. 进入 **汉化**，选择模式并确认应用。需要恢复时，点击 **恢复原样**。
 
-更新、汉化和恢复可能关闭 Claude Desktop，请先保存正在进行的工作；出现 Windows 权限提示时，按实际操作确认。
+更新、汉化和恢复可能关闭 Claude Desktop，请先保存正在进行的工作；出现系统权限提示时，按实际操作确认。
 
-**运行环境：** Windows x64、WebView2 Runtime。下载安装、更新检查、汉化与恢复需要联网；暂未提供 ARM64 支持。
+| 平台 | 产物名称 | 运行环境 |
+| --- | --- | --- |
+| Windows x64 | `claude-windows-cn.exe` | Windows、WebView2 Runtime |
+| macOS Apple Silicon | `claude-cn-macos-arm64.app.tar.gz` | macOS 13 或更新版本 |
+| macOS Intel | `claude-cn-macos-x64.app.tar.gz` | macOS 13 或更新版本 |
+
+macOS 解压后运行 `Claude 中文助手.app`。CI 产物使用本地签名，尚无 Apple Developer ID 签名与公证；Gatekeeper 可能要求用户在系统设置中批准打开，正式分发前须完成对应验收。Windows 暂不提供 ARM64 版；Cowork 的硬件与系统要求以官方为准。下载安装、更新检查、汉化与恢复需要联网。
+
+macOS 的汉化和恢复还需要 **Python 3.9 或更新版本**，可通过 [python.org](https://www.python.org/downloads/macos/) 或 Homebrew 安装。助手会检查依赖，缺少时明确提示，不会自动安装 Python；Claude 的安装、更新与启动不需要 Python。
 
 首版的验证范围与已知限制见 [更新日志](CHANGELOG.md#010---2026-09-24)。
 
@@ -109,11 +120,11 @@
 
 ### 遇到问题如何反馈？
 
-在执行页复制日志，通过 [Issues](https://github.com/chrichuang218/claude-windows-cn/issues) 提供 Windows 版本、Claude 版本、汉化模式和复现步骤。发送前请检查日志中的用户名、路径等个人信息。
+在执行页复制日志，通过 [Issues](https://github.com/chrichuang218/claude-windows-cn/issues) 提供系统版本、芯片架构、Claude 版本、汉化模式和复现步骤。发送前请检查日志中的用户名、路径等个人信息。
 
 ## 从源码运行
 
-准备 Git、Node.js（20.19+ 的 20.x，或 22.12+）、Rust、Microsoft C++ Build Tools 和 WebView2 Runtime，在 Windows x64 上执行：
+准备 Git、Node.js（20.19+ 的 20.x，或 22.12+）与 Rust。Windows 还需要 Microsoft C++ Build Tools 和 WebView2 Runtime；macOS 需要 Xcode Command Line Tools（`xcode-select --install`）。在对应系统执行：
 
 ```powershell
 git clone https://github.com/chrichuang218/claude-windows-cn.git
@@ -122,13 +133,23 @@ npm ci
 npm run tauri dev
 ```
 
-构建 exe：
+Windows 构建 EXE：
 
 ```powershell
 npm run tauri build -- --no-bundle
 ```
 
 产物：`src-tauri/target/release/claude-windows-cn.exe`。
+
+macOS 构建应用（自动合并 `src-tauri/tauri.macos.conf.json`）：
+
+```bash
+APPLE_SIGNING_IDENTITY=- npm run tauri build -- --bundles app
+```
+
+产物：`src-tauri/target/release/bundle/macos/Claude 中文助手.app`。`--target aarch64-apple-darwin` 与 `--target x86_64-apple-darwin` 分别用于两个芯片架构，须先通过 `rustup target add` 安装目标。跨架构编译成功不能代替对应机器上的运行验收。
+
+[CI 工作流](.github/workflows/ci.yml) 在 Windows、macOS Apple Silicon 和 macOS Intel runner 上执行检查、测试、打包、自检和摘要生成，并保存构建附件；不会自动创建 GitHub Release。
 
 仅预览界面可运行 `npm run dev`；应用管理和汉化功能需要 Tauri 桌面程序。
 

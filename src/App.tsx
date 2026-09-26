@@ -8,6 +8,7 @@ import './App.css'
 type Page = 'startup' | 'setup' | 'overview' | 'localize' | 'operation'
 type InstallMode = 'portable' | 'user' | 'system'
 type PatchMode = 'safe' | 'full'
+type Platform = 'windows' | 'macos'
 type OperationKind =
   | 'install_assistant' | 'install_claude' | 'check_claude_update' | 'update_claude'
   | 'apply_patch' | 'restore_patch' | 'create_claude_shortcut'
@@ -156,6 +157,7 @@ function useDialogFocus(open: boolean, ref: RefObject<HTMLElement | null>, close
 }
 
 function App() {
+  const [platform, setPlatform] = useState<Platform>(navigator.platform.startsWith('Mac') ? 'macos' : 'windows')
   const [assistant, setAssistant] = useState<AssistantStatus | null>(null)
   const [claude, setClaude] = useState<ClaudeStatus | null>(null)
   const [config, setConfig] = useState(defaultConfig)
@@ -237,18 +239,21 @@ function App() {
       invoke<ClaudeStatus>('get_status'),
       invoke<AssistantConfig>('get_config'),
       invoke<OperationSnapshot>('get_operation_snapshot'),
-    ]).then(([assistantResult, claudeResult, configResult, operationResult]) => {
+      invoke<Platform>('get_platform'),
+    ]).then(([assistantResult, claudeResult, configResult, operationResult, platformResult]) => {
       if (attempt !== startupAttempt.current) return
       const errors: string[] = []
       if (assistantResult.status === 'rejected') errors.push(`助手状态：${errorText(assistantResult.reason)}`)
       if (claudeResult.status === 'rejected') errors.push(`Claude 状态：${errorText(claudeResult.reason)}`)
       if (configResult.status === 'rejected') errors.push(`配置：${errorText(configResult.reason)}`)
       if (operationResult.status === 'rejected') errors.push(`执行状态：${errorText(operationResult.reason)}`)
+      if (platformResult.status === 'rejected') errors.push(`系统平台：${errorText(platformResult.reason)}`)
       if (errors.length) {
         setLoadError(errors.join('；'))
         return
       }
       if (assistantResult.status === 'fulfilled' && claudeResult.status === 'fulfilled' && configResult.status === 'fulfilled' && operationResult.status === 'fulfilled') {
+        if (platformResult.status === 'fulfilled') setPlatform(platformResult.value)
         setAssistant(assistantResult.value)
         setClaude(claudeResult.value)
         setSelectedMode(claudeResult.value.appliedMode ?? 'safe')
@@ -463,11 +468,11 @@ function App() {
     : operation?.step.trim() === title ? '' : operation?.step.trim() ?? ''
 
   return (
-    <div id="claude-assistant-sketch" data-variant="tabs" aria-label="Claude 中文助手">
+    <div id="claude-assistant-sketch" data-variant="tabs" data-platform={platform} aria-label="Claude 中文助手">
       <div className="ca-window">
         <div className="ca-titlebar" data-tauri-drag-region>
           <img src="/claude-icon.svg" alt="" data-tauri-drag-region />
-          <span data-tauri-drag-region>Claude Windows 中文助手</span>
+          <span data-tauri-drag-region>Claude 中文助手</span>
           <span className="ca-window-controls">
             <button type="button" onClick={() => void controlWindow('minimize', '最小化')} aria-label="最小化"><Minus aria-hidden="true" /></button>
             <button type="button" onClick={() => void controlWindow('close', '关闭')} aria-label="关闭"><X aria-hidden="true" /></button>
@@ -501,7 +506,7 @@ function App() {
               <select id="ca-install-mode" className="ca-install-select" value={config.assistantInstallMode} onChange={(event) => changeInstallMode(event.target.value as InstallMode)} disabled={!assistant || busy}>
                 <option value="portable">便携方式</option><option value="user">用户安装（推荐）</option><option value="system">系统安装</option>
               </select>
-              <p className="ca-install-hint">{config.assistantInstallMode === 'portable' ? '默认在当前目录使用，不复制程序；选择其他目录时会保留原始文件。' : '程序将复制到安装位置；安装完成并退出后，可删除原始下载文件。'}</p>
+              <p className="ca-install-hint">{config.assistantInstallMode === 'portable' ? '默认在当前目录使用，不复制程序；选择其他目录时会保留原始文件。' : platform === 'macos' ? `将 Claude 中文助手.app 复制到所选目录${config.assistantInstallMode === 'system' ? '，系统安装可能需要管理员授权' : ''}；原始下载文件会保留。` : '程序将复制到安装位置；安装完成并退出后，可删除原始下载文件。'}</p>
               <div className="ca-install-label ca-install-path-label"><label htmlFor="ca-assistant-path">安装位置</label></div>
               <div className="ca-path-row">
                 <input id="ca-assistant-path" value={config.assistantPath} aria-label="助手安装位置" onChange={(event) => setConfig((current) => ({ ...current, assistantPath: event.target.value }))} disabled={!assistant || busy} />
@@ -513,7 +518,7 @@ function App() {
 
             {page === 'overview' ? <section className="ca-pane ca-overview" aria-label="概览">
               <div className="ca-hero"><img src="/claude-icon.svg" className="ca-app-icon" alt="" /><div className="ca-hero-copy"><h2>Claude Desktop</h2><div className="ca-version">{claude ? claude.installed ? `${claude.version || '未知版本'} · 已安装` : '尚未安装' : '正在检测'}</div></div>
-                <button type="button" className="ca-button ca-primary ca-launch" onClick={() => claude?.installed ? void openClaude() : confirmAction('安装 Claude', '将下载并安装官方 Windows 应用。', 'install_claude')} disabled={busy || !claude}>{claude?.installed ? <Play aria-hidden="true" /> : <Download aria-hidden="true" />}<span>{claude?.installed ? '打开 Claude' : '安装 Claude'}</span></button>
+                <button type="button" className="ca-button ca-primary ca-launch" onClick={() => claude?.installed ? void openClaude() : confirmAction('安装 Claude', `将下载并安装官方 ${platform === 'macos' ? 'macOS' : 'Windows'} 应用。`, 'install_claude')} disabled={busy || !claude}>{claude?.installed ? <Play aria-hidden="true" /> : <Download aria-hidden="true" />}<span>{claude?.installed ? '打开 Claude' : '安装 Claude'}</span></button>
               </div>
               {claude?.updateAvailable && claude.installed ? <div className="ca-update"><div><h3>Claude 有新版本</h3><p>{claude.version || '当前版本'} → {claude.latestVersion}</p></div><button type="button" className="ca-button ca-primary" onClick={() => confirmAction('更新 Claude？', '安装过程中会关闭 Claude，请先保存正在进行的工作。', 'update_claude')} disabled={busy}><Download aria-hidden="true" />立即更新</button></div> : null}
               <div className="ca-row"><div><h3>应用更新</h3><p>{claude?.updateCheckError || (claude?.updateAvailable != null ? claude.updateAvailable ? '已发现新版本，可随时更新。' : '已是最新版本。' : '尚未检查最新版本')}</p></div><button type="button" className="ca-text-button" onClick={() => void startOperation('check_claude_update')} disabled={busy || !claude?.installed}><RefreshCw aria-hidden="true" />检查更新</button></div>
