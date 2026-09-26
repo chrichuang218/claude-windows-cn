@@ -16,7 +16,7 @@
 
 > 本项目是第三方工具，与 Anthropic 没有从属关系。助手和 Claude Desktop 是两个独立应用，分别安装、更新和卸载。
 
-> 仓库由 `claude-windows-cn` 更名为 `claude-desktop-cn`。改名前构建的助手需手动升级一次，详见[更名迁移](#仓库改名后如何升级旧版助手)。Windows 文件名仍为 `claude-windows-cn.exe`，已有配置和安装位置保持兼容。
+> 仓库已更名为 `claude-desktop-cn`，新版仅使用新仓库更新源。旧包请直接替换为包含本次改动的新构建；已发布的 v0.1.2 尚不包含此改动。
 
 > macOS 已加入与 Windows 对齐的功能实现及双架构构建流程，尚未经过 Mac 实机验收，也尚未发布经过验收的 macOS 安装包。当前截图来自 Windows；构建成功不等于 Claude 启动、汉化恢复和 Cowork 已验证。验收范围见 [macOS 验收清单](docs/macos-acceptance.md)。
 
@@ -103,12 +103,6 @@ macOS 的汉化和恢复还需要 **Python 3.9 或更新版本**，可通过 [py
 首版的验证范围与已知限制见 [更新日志](CHANGELOG.md#010---2026-09-24)。
 
 ## 常见问题
-
-### 仓库改名后如何升级旧版助手？
-
-旧版严格校验原仓库的下载地址，GitHub 重定向不能让它接受新地址。已发布的 v0.1.2 尚不包含迁移修复；正式迁移版发布前，可从源码构建或使用包含本次修复且[通过 CI 的测试包](https://github.com/chrichuang218/claude-desktop-cn/actions/workflows/ci.yml)。
-
-退出助手后，Windows 用迁移构建的 `claude-windows-cn.exe` 替换原助手安装目录中的同名文件；macOS 替换原位置的 `Claude 中文助手.app`。保留已有配置和备份目录，今后继续从原快捷方式启动。迁移构建已使用新仓库检查更新，并兼容本项目的新旧附件地址。
 
 ### 更新 Claude 后会自动汉化吗？
 

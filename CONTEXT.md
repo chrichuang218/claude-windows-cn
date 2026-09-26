@@ -1,6 +1,6 @@
 # Claude 中文助手
 
-对外仓库：`chrichuang218/claude-desktop-cn`（原 `claude-windows-cn`）。内部程序、包及配置标识沿用旧名称；改名前构建的助手需手动安装一次迁移构建。
+对外仓库及唯一更新源：`chrichuang218/claude-desktop-cn`。内部程序、包及配置标识不随仓库更名调整；不提供旧更新源兼容，旧包直接替换为新构建。
 
 管理 Windows 与 macOS 上的官方 Claude Desktop，并提供可选的中文补丁。两端功能范围一致；平台相关操作使用独立后端，共享界面、命令与操作状态。助手与被管理的 Claude Desktop 是两个独立产品。macOS 实机验收状态见 `docs/macos-acceptance.md`。
 
