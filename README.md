@@ -8,13 +8,15 @@
 ![平台 macOS arm64 / x64](https://img.shields.io/badge/平台-macOS_arm64_%2F_x64-555555)
 [![许可证 MIT](https://img.shields.io/badge/License-MIT-AE563D)](LICENSE)
 
-[下载助手](https://github.com/chrichuang218/claude-windows-cn/releases/latest) · [界面预览](#界面预览) · [快速上手](#快速上手) · [反馈问题](https://github.com/chrichuang218/claude-windows-cn/issues)
+[下载助手](https://github.com/chrichuang218/claude-desktop-cn/releases/latest) · [界面预览](#界面预览) · [快速上手](#快速上手) · [反馈问题](https://github.com/chrichuang218/claude-desktop-cn/issues)
 
 </div>
 
 安装、更新、启动 Claude Desktop，以及应用或恢复汉化，都在一个小工具里完成。已有官方应用可以直接检测使用；汉化由你选择，更新后也不会自动重新应用。
 
 > 本项目是第三方工具，与 Anthropic 没有从属关系。助手和 Claude Desktop 是两个独立应用，分别安装、更新和卸载。
+
+> 仓库由 `claude-windows-cn` 更名为 `claude-desktop-cn`。改名前构建的助手需手动升级一次，详见[更名迁移](#仓库改名后如何升级旧版助手)。Windows 文件名仍为 `claude-windows-cn.exe`，已有配置和安装位置保持兼容。
 
 > macOS 已加入与 Windows 对齐的功能实现及双架构构建流程，尚未经过 Mac 实机验收，也尚未发布经过验收的 macOS 安装包。当前截图来自 Windows；构建成功不等于 Claude 启动、汉化恢复和 Cowork 已验证。验收范围见 [macOS 验收清单](docs/macos-acceptance.md)。
 
@@ -81,7 +83,7 @@
 
 ## 快速上手
 
-1. Windows 前往 [Releases](https://github.com/chrichuang218/claude-windows-cn/releases/latest)，下载 `claude-windows-cn.exe`。macOS 在完成验收和正式发布前，请按下方步骤从源码构建；CI 也会生成供测试的应用包。各平台产物名称见下表，均配套 `.sha256` 摘要。
+1. Windows 前往 [Releases](https://github.com/chrichuang218/claude-desktop-cn/releases/latest)，下载 `claude-windows-cn.exe`。macOS 在完成验收和正式发布前，请按下方步骤从源码构建；CI 也会生成供测试的应用包。各平台产物名称见下表，均配套 `.sha256` 摘要。
 2. 启动助手，选择安装方式和位置。一般选 **用户安装**；**便携方式**默认在当前 EXE 或 `.app` 所在目录使用，不再复制程序。选择其他位置或用户/系统安装时，会保留原始下载文件；安装完成并退出后可删除原始文件，今后使用安装目录中的程序或快捷方式。macOS 用户安装默认为 `~/Applications`，系统安装默认为 `/Applications`，安装目录内的应用名称为 `Claude 中文助手.app`。
 3. 在 **概览** 查看 Claude Desktop 状态。已安装则直接使用；未安装可通过助手下载安装。
 4. 进入 **汉化**，选择模式并确认应用。需要恢复时，点击 **恢复原样**。
@@ -102,6 +104,12 @@ macOS 的汉化和恢复还需要 **Python 3.9 或更新版本**，可通过 [py
 
 ## 常见问题
 
+### 仓库改名后如何升级旧版助手？
+
+旧版严格校验原仓库的下载地址，GitHub 重定向不能让它接受新地址。已发布的 v0.1.2 尚不包含迁移修复；正式迁移版发布前，可从源码构建或使用包含本次修复且[通过 CI 的测试包](https://github.com/chrichuang218/claude-desktop-cn/actions/workflows/ci.yml)。
+
+退出助手后，Windows 用迁移构建的 `claude-windows-cn.exe` 替换原助手安装目录中的同名文件；macOS 替换原位置的 `Claude 中文助手.app`。保留已有配置和备份目录，今后继续从原快捷方式启动。迁移构建已使用新仓库检查更新，并兼容本项目的新旧附件地址。
+
 ### 更新 Claude 后会自动汉化吗？
 
 不会。更新后请在汉化页查看实际状态，按需重新应用。选中某个模式不代表已经应用，以页面的“已应用”状态为准。
@@ -120,15 +128,15 @@ macOS 的汉化和恢复还需要 **Python 3.9 或更新版本**，可通过 [py
 
 ### 遇到问题如何反馈？
 
-在执行页复制日志，通过 [Issues](https://github.com/chrichuang218/claude-windows-cn/issues) 提供系统版本、芯片架构、Claude 版本、汉化模式和复现步骤。发送前请检查日志中的用户名、路径等个人信息。
+在执行页复制日志，通过 [Issues](https://github.com/chrichuang218/claude-desktop-cn/issues) 提供系统版本、芯片架构、Claude 版本、汉化模式和复现步骤。发送前请检查日志中的用户名、路径等个人信息。
 
 ## 从源码运行
 
 准备 Git、Node.js（20.19+ 的 20.x，或 22.12+）与 Rust。Windows 还需要 Microsoft C++ Build Tools 和 WebView2 Runtime；macOS 需要 Xcode Command Line Tools（`xcode-select --install`）。在对应系统执行：
 
 ```powershell
-git clone https://github.com/chrichuang218/claude-windows-cn.git
-cd claude-windows-cn
+git clone https://github.com/chrichuang218/claude-desktop-cn.git
+cd claude-desktop-cn
 npm ci
 npm run tauri dev
 ```

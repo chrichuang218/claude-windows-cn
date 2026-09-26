@@ -14,7 +14,6 @@ use std::{
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 
-const OWNER_REPO: &str = "chrichuang218/claude-windows-cn";
 #[cfg(target_arch = "aarch64")]
 const ASSET: &str = "claude-cn-macos-arm64.app.tar.gz";
 #[cfg(not(target_arch = "aarch64"))]

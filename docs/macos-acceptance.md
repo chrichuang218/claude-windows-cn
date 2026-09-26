@@ -10,7 +10,7 @@
 - Python 适配器 8 项通过，1 项因 Windows 符号链接权限不足跳过；覆盖两种模式、隔离目标、禁止上游修改真实用户配置、错误传播，以及 Python 优化模式下仍拒绝不安全 ZIP。还核验了真实上游的导入和参数接口，未对真实 Claude 执行补丁。
 - 此次只读核验的上游 `scripts/patch_claude_zh_cn.py` SHA256 为 `0cbc14916f2abc0f825ffe8ebef3dd16c0e6c956a29e5b208707f17593884f91`；运行时仍按既有约定在线获取最新引擎。
 
-同日在 GitHub 原生 runner 上，[Apple Silicon](https://github.com/chrichuang218/claude-windows-cn/actions/runs/36217398121/job/108335997205) 和 [Intel](https://github.com/chrichuang218/claude-windows-cn/actions/runs/36217398121/job/108335997306) 均通过 16 项 Rust 测试、8 项 Python 适配器测试、生产 `.app` 构建、包内 `--self-test`、代码签名及 SHA256 校验，并生成测试包。原生测试包含整包替换失败回退、清理失败保留有效新包、路径与符号链接保护；Python 仅跳过未提供外部上游快照的可选接口检查。
+同日在 GitHub 原生 runner 上，[Apple Silicon](https://github.com/chrichuang218/claude-desktop-cn/actions/runs/36217398121/job/108335997205) 和 [Intel](https://github.com/chrichuang218/claude-desktop-cn/actions/runs/36217398121/job/108335997306) 均通过 16 项 Rust 测试、8 项 Python 适配器测试、生产 `.app` 构建、包内 `--self-test`、代码签名及 SHA256 校验，并生成测试包。原生测试包含整包替换失败回退、清理失败保留有效新包、路径与符号链接保护；Python 仅跳过未提供外部上游快照的可选接口检查。
 
 最低系统为 macOS 13。Apple Silicon 使用 `claude-cn-macos-arm64.app.tar.gz`，Intel 使用 `claude-cn-macos-x64.app.tar.gz`；都应解压得到 `Claude 中文助手.app`。各项分别在两个架构验证；Cowork 若不支持当前硬件，应记录官方限制，不能记为测试通过。
 

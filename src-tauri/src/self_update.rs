@@ -13,7 +13,6 @@ use std::{
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 
-const OWNER_REPO: &str = "chrichuang218/claude-windows-cn";
 const ASSET: &str = "claude-windows-cn.exe";
 const CHECKSUM: &str = "claude-windows-cn.exe.sha256";
 static CACHE_LOCK: Mutex<()> = Mutex::new(());

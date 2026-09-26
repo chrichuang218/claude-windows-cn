@@ -1,4 +1,7 @@
 // Platform modules provide release transport, installation, and asset names.
+const OWNER_REPO: &str = "chrichuang218/claude-desktop-cn";
+const LEGACY_OWNER_REPO: &str = "chrichuang218/claude-windows-cn";
+
 #[derive(Clone, Debug, Deserialize)]
 struct Release {
     tag_name: String,
@@ -78,9 +81,11 @@ fn validate_release_assets(release: Release) -> Result<ReleaseInfo, String> {
         .find(|asset| asset.name == CHECKSUM)
         .ok_or_else(|| format!("最新 Release 缺少 {CHECKSUM}。"))?;
     for asset in [executable, checksum] {
-        if !asset.browser_download_url.starts_with(&format!(
-            "https://github.com/{OWNER_REPO}/releases/download/"
-        )) {
+        if ![OWNER_REPO, LEGACY_OWNER_REPO].iter().any(|repository| {
+            asset.browser_download_url.starts_with(&format!(
+                "https://github.com/{repository}/releases/download/"
+            ))
+        }) {
             return Err("Release 文件下载地址不属于本助手仓库。".into());
         }
     }
@@ -98,6 +103,33 @@ fn validate_release_assets(release: Release) -> Result<ReleaseInfo, String> {
         checksum_url: checksum.browser_download_url.clone(),
         release_url: release.html_url,
     })
+}
+
+#[cfg(test)]
+mod repository_tests {
+    use super::*;
+
+    #[test]
+    fn renamed_repository_keeps_legacy_urls_without_accepting_foreign_sources() {
+        for (base, accepted) in [
+            (format!("https://github.com/{OWNER_REPO}"), true),
+            (format!("https://github.com/{LEGACY_OWNER_REPO}"), true),
+            (format!("https://github.com/{OWNER_REPO}-other"), false),
+            ("https://github.com/another-user/claude-desktop-cn".into(), false),
+            (format!("https://github.com.example.org/{OWNER_REPO}"), false),
+            (format!("http://github.com/{OWNER_REPO}"), false),
+        ] {
+            let release = Release {
+                tag_name: "v1.0.0".into(),
+                html_url: format!("{base}/releases/tag/v1.0.0"),
+                assets: [ASSET, CHECKSUM].into_iter().map(|name| Asset {
+                    name: name.into(),
+                    browser_download_url: format!("{base}/releases/download/v1.0.0/{name}"),
+                }).collect(),
+            };
+            assert_eq!(validate_release_assets(release).is_ok(), accepted, "{base}");
+        }
+    }
 }
 
 pub fn check(operation: &OperationState) -> Result<OperationOutcome, String> {

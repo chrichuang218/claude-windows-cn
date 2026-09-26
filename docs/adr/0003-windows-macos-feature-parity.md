@@ -5,6 +5,8 @@ date: 2026-09-26
 
 # Windows 与 macOS 使用同一界面和操作契约
 
+2026-09-26 补充：用户选择立即将对外仓库名改为 `claude-desktop-cn`，接受改名前构建的助手需手动升级一次。下文保留仓库标识的原决定据此调整；产品标识、程序名、应用 ID 和配置目录保持不变，新版更新源指向新仓库并兼容旧附件地址。
+
 用户要求 macOS 与现有 Windows 功能一致。保留 React 界面、Tauri 命令、操作状态和三种助手安装方式；通过 Rust 平台模块接入 macOS 的 `.app`、官方更新源和上游 Mac 汉化入口。平台差异使用编译期选择，不增加插件库或通用平台接口层。
 
 `assistantPath` 两端都表示安装目录。Windows 继续分发 `claude-windows-cn.exe`；macOS 分别分发 `claude-cn-macos-arm64.app.tar.gz`、`claude-cn-macos-x64.app.tar.gz`，内部均为 `Claude 中文助手.app`，同时提供同名 `.sha256`。macOS 的安装、更新与恢复以完整应用包为单位。保留既有产品、应用和仓库标识，避免破坏 Windows 配置及更新来源。

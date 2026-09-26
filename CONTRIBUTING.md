@@ -17,8 +17,8 @@
 - macOS 汉化与恢复：Python 3.9+（python.org 或 Homebrew）；缺少依赖时助手提示安装，不自动修改开发环境
 
 ```powershell
-git clone https://github.com/chrichuang218/claude-windows-cn.git
-cd claude-windows-cn
+git clone https://github.com/chrichuang218/claude-desktop-cn.git
+cd claude-desktop-cn
 npm ci
 ```
 
